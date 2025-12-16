@@ -1,0 +1,108 @@
+.alloc-container {
+  padding: 20px;
+}
+
+.alloc-title {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.alloc-subtitle {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Table */
+.alloc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.alloc-table th {
+  background: #002060;
+  color: #fff;
+  padding: 12px;
+  text-align: left;
+}
+
+.alloc-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Buttons */
+.alloc-edit-btn {
+  background: #00a3ff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.alloc-edit-btn:hover {
+  background: #0088d1;
+}
+
+/* Modal */
+.alloc-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background: rgba(0,0,0,0.3);
+  align-items: center;
+  justify-content: center;
+}
+
+.alloc-modal {
+  background: #fff;
+  width: 380px;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+}
+
+.alloc-modal h2 {
+  margin-bottom: 15px;
+}
+
+.alloc-modal label {
+  display: block;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.alloc-modal input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.save-btn {
+  background: #2563eb;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+}
+
+.cancel-btn {
+  background: #666;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+}

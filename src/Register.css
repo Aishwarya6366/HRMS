@@ -1,0 +1,855 @@
+/* Register.css - COMPACT VERSION */
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.register-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+/* Header */
+.portal-header {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  height: 70px;
+}
+
+.header-left h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.company-name {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Main Content */
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background: white;
+  border-right: 1px solid #e1e5eb;
+  padding: 15px;
+  overflow-y: auto;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e1e5eb;
+}
+
+/* Employee Type Options */
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid #e1e5eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.type-option:hover {
+  border-color: #3498db;
+  background: #f8fafc;
+}
+
+.type-option.selected {
+  border-color: #1a73e8;
+  background: #e8f0fe;
+}
+
+.option-icon {
+  font-size: 18px;
+}
+
+.option-content h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.option-description {
+  font-size: 10px;
+  color: #666;
+  line-height: 1.2;
+}
+
+/* Form Area */
+.form-area {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* When attendance is active */
+.form-area.attendance-active {
+  padding: 0;
+  background: white;
+}
+
+/* Tabs Bar */
+.tabs-bar {
+  display: flex;
+  gap: 1px;
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  background: #f8f9fa;
+  color: #666;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+}
+
+.tab:hover {
+  background: #e9ecef;
+}
+
+.tab.active {
+  background: #1a237e;
+  color: white;
+  font-weight: 600;
+}
+
+/* Registration Form */
+.registration-form {
+  background: white;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Form Tab */
+.form-tab {
+  animation: fadeIn 0.3s ease;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 10px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-tab h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Photo Section */
+.photo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px 0;
+  padding: 0;
+  height: 35px;
+}
+
+.photo-preview {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #e1e5eb;
+  background: #f8f9fa;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-placeholder span {
+  font-size: 16px;
+  margin: 0;
+  display: block;
+}
+
+.photo-placeholder p {
+  display: none;
+}
+
+.upload-btn {
+  background: #1a237e;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  height: 26px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.upload-btn:hover {
+  background: #283593;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Form Labels */
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+/* Input Styles */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #495057;
+  background: white;
+  transition: border 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 50px;
+}
+
+/* Readonly Inputs */
+.readonly {
+  background: #f8f9fa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Currency Input */
+.currency-input {
+  position: relative;
+}
+
+.currency-input span {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #495057;
+  font-size: 11px;
+}
+
+.currency-input input {
+  padding-left: 24px;
+}
+
+/* Address Header */
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.copy-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copy-btn:hover {
+  background: #218838;
+}
+
+/* Form Section */
+.form-section {
+  margin-top: 15px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.form-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+/* Form Navigation */
+.form-navigation {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #e1e5eb;
+  flex-shrink: 0;
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn.prev {
+  background: #6c757d;
+  color: white;
+}
+
+.nav-btn.prev:hover {
+  background: #5a6268;
+}
+
+.nav-btn.next {
+  background: #1a237e;
+  color: white;
+}
+
+.nav-btn.next:hover {
+  background: #283593;
+}
+
+.nav-btn.submit {
+  background: #28a745;
+  color: white;
+}
+
+.nav-btn.submit:hover {
+  background: #218838;
+}
+
+/* FOOTER */
+.app-footer {
+  width: 100%;
+  padding: 12px 0;
+  background: #f5f7fa;
+  text-align: center;
+  border-top: 1px solid #dcdfe6;
+  color: #333;
+  font-size: 12px;
+  flex-shrink: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 100;
+}
+
+/* ATTENDANCE CONTAINER - FIXED FOR FULL DISPLAY */
+.attendance-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* Attendance Header */
+.attendance-header {
+  padding: 20px 20px 15px 20px;
+  border-bottom: 1px solid #e1e5eb;
+  flex-shrink: 0;
+  background: white;
+}
+
+.attendance-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.attendance-header p {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Attendance Content - SCROLLABLE */
+.attendance-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Attendance Form Grid */
+.attendance-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+/* Attendance Form Group */
+.attendance-form-group {
+  margin-bottom: 15px;
+}
+
+.attendance-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.attendance-form-group.required label::after {
+  content: " *";
+  color: #dc3545;
+}
+
+.attendance-form-group input,
+.attendance-form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #495057;
+  background: white;
+  transition: border 0.2s;
+}
+
+.attendance-form-group input:focus,
+.attendance-form-group select:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+}
+
+/* Time Input */
+.time-input {
+  font-family: monospace;
+  text-align: center;
+}
+
+/* Attendance Summary Section */
+.attendance-summary-section {
+  margin-top: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e1e5eb;
+}
+
+.attendance-summary-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  text-align: center;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e1e5eb;
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 5px;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* Early Exit Section */
+.early-exit-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff8e1;
+  border-radius: 6px;
+  border: 1px solid #ffe082;
+  text-align: center;
+}
+
+.early-exit-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d32f2f;
+  margin-bottom: 10px;
+}
+
+.early-exit-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #d32f2f;
+}
+
+/* Attendance Buttons */
+.attendance-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e1e5eb;
+  flex-shrink: 0;
+}
+
+.attendance-btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.attendance-btn.save {
+  background: #1a237e;
+  color: white;
+}
+
+.attendance-btn.save:hover {
+  background: #283593;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(26, 35, 126, 0.2);
+}
+
+.attendance-btn.reset {
+  background: #6c757d;
+  color: white;
+}
+
+.attendance-btn.reset:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+/* Hide tabs when attendance is active */
+.form-area.attendance-active .tabs-bar {
+  display: none;
+}
+
+/* Hide registration form when attendance is active */
+.form-area.attendance-active .registration-form {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .form-grid,
+  .attendance-form-grid,
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .sidebar {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e1e5eb;
+    padding: 12px;
+    height: 180px;
+    overflow-y: auto;
+  }
+  
+  .form-grid,
+  .attendance-form-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .tabs-bar {
+    height: auto;
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1 0 calc(50% - 2px);
+    min-width: 110px;
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  
+  .attendance-content {
+    padding: 15px;
+  }
+  
+  .attendance-header {
+    padding: 15px 15px 10px 15px;
+  }
+  
+  .attendance-header h2 {
+    font-size: 18px;
+  }
+  
+  .attendance-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .app-footer {
+    height: 45px;
+    padding: 10px 0;
+  }
+  
+  .summary-value {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    height: 100vh;
+    min-height: 100vh;
+  }
+  
+  .portal-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding: 12px 15px;
+    height: auto;
+    min-height: 70px;
+  }
+  
+  .portal-header h1 {
+    font-size: 18px;
+  }
+  
+  .back-btn {
+    width: 100%;
+    padding: 6px 12px;
+  }
+  
+  .tabs-bar {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .tab {
+    width: 100%;
+    padding: 8px;
+  }
+  
+  .attendance-content {
+    padding: 12px;
+  }
+  
+  .attendance-form-group input,
+  .attendance-form-group select {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .app-footer {
+    height: 40px;
+    font-size: 11px;
+    padding: 8px 0;
+  }
+  
+  .summary-value {
+    font-size: 18px;
+  }
+  
+  .early-exit-value {
+    font-size: 18px;
+  }
+}
+
+/* Improved Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Custom scrollbar for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Required field indicator */
+.required::after {
+  content: " *";
+  color: #dc3545;
+  font-size: 11px;
+}
+/* Attendance Wrapper Scroll Fix */
+.attendance-wrapper {
+  height: calc(100vh - 140px); /* adjust for header/footer */
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* 3 Column Grid for Attendance */
+.attendance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* Uniform Attendance Input Fields */
+.attendance-grid .form-group input,
+.attendance-grid .form-group select {
+  width: 100%;
+  padding: 8px;
+}
+

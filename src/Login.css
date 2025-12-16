@@ -1,0 +1,161 @@
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Inter", sans-serif;
+}
+
+/* MAIN LAYOUT */
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.header {
+  height: 70px;
+  background: #062041;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding-left: 25px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-img {
+  height: 42px;
+}
+
+.company-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #E6B842;
+}
+
+/* CENTER */
+.center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(#dbeafe, #eff6ff);
+}
+
+/* CARD */
+.card {
+  width: 380px;
+  background: white;
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.20);
+}
+
+.card-title {
+  font-size: 23px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+/* FORM */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+input {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0 12px;
+  font-size: 14px;
+  background: #f8fafc;
+}
+
+/* SMALL LOGIN BUTTON (Centered) */
+.btn {
+  width: 140px;
+  height: 40px;
+  border-radius: 8px;
+  background: #2563eb;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: white;
+  margin-top: 10px;
+  align-self: center;
+}
+
+.btn:hover {
+  background: #1e4ed8;
+}
+
+/* FOOTER */
+.footer {
+  height: 40px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 12px;
+}
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.toggle-eye {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.7;
+  transition: 0.2s;
+}
+
+.toggle-eye:hover {
+  opacity: 1;
+}
+
+/* USER ICON + TITLE SECTION */
+.login-top {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.user-icon {
+  margin-bottom: 10px;
+}
+
+.login-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+}
+
+.orange {
+  color: #ff8c00;
+  font-weight: 800;
+}

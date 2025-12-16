@@ -1,0 +1,17 @@
+.validation-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.error-icon {
+  font-size: 12px;
+}
+
+.error-text {
+  font-weight: 500;
+}
