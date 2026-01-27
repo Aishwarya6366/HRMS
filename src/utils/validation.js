@@ -1,15 +1,24 @@
 // =================== REUSABLE VALIDATION UTILITY ===================
 // Import this file anywhere you need field validation
+import { useState } from "react";
+
 
 export const validators = {
-  // 1. Employee ID: Alphanumeric, 1-10 characters
   employeeId: (value) => {
-    if (!value || value.trim() === '') return 'Employee ID is required';
-    if (value.length < 1 || value.length > 10) return 'Employee ID must be 1-10 characters';
-    if (!/^[A-Za-z0-9]{1,10}$/.test(value)) return 'Employee ID must be alphanumeric only';
+    if (!value || value.trim() === "") {
+      return "Employee ID is required";
+    }
+
+    const v = value.trim();
+
+    if (!/^[A-Za-z]{4}[0-9]{4}$/.test(v)) {
+      return "Employee ID must be 4 letters followed by 4 digits (e.g., VPPL4040)";
+    }
+
     return null;
   },
 
+ 
   // 2. Name: Letters, spaces, hyphen, dot, 2-50 characters
   name: (value) => {
     if (!value || value.trim() === '') return 'Name is required';
@@ -179,6 +188,73 @@ export const validators = {
     if (trimmed.length < min || trimmed.length > max) return `${fieldName} must be ${min}-${max} characters`;
     if (!/^[A-Za-z ]+$/.test(trimmed)) return `${fieldName} can only contain letters and spaces`;
     return null;
+  },
+
+  // 21. Employee ID input formatter (for real-time formatting)
+  formatEmployeeIdInput: (value) => {
+    if (!value) return '';
+    
+    // Remove any non-alphanumeric characters
+    let formatted = value.replace(/[^A-Za-z0-9]/g, '');
+    
+    // Convert to uppercase
+    formatted = formatted.toUpperCase();
+    
+    // Limit to 8 characters max
+    formatted = formatted.substring(0, 8);
+    
+    // Separate letters and digits
+    if (formatted.length > 4) {
+      const letters = formatted.substring(0, 4).replace(/[^A-Z]/g, '');
+      const numbers = formatted.substring(4).replace(/[^0-9]/g, '');
+      return letters + numbers;
+    }
+    
+    return formatted;
+  },
+
+  // 22. Employee ID with length limit validation
+  employeeIdWithLimit: (value) => {
+    if (!value || value.trim() === "") {
+      return "Employee ID is required";
+    }
+
+    const v = value.trim();
+    
+    // Check length first
+    if (v.length !== 8) {
+      return "Employee ID must be exactly 8 characters (4 letters + 4 digits)";
+    }
+
+    if (!/^[A-Za-z]{4}[0-9]{4}$/.test(v)) {
+      return "Employee ID must be 4 letters followed by 4 digits (e.g., VPPL4040)";
+    }
+
+    return null;
+  },
+
+  // 23. Input limiter for any field
+  limitInput: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.substring(0, maxLength);
+  },
+
+  // 24. Numbers only with limit
+  numbersOnly: (value, maxLength = 10) => {
+    if (!value) return '';
+    return value.replace(/[^0-9]/g, '').substring(0, maxLength);
+  },
+
+  // 25. Letters only with limit
+  lettersOnly: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.replace(/[^A-Za-z]/g, '').substring(0, maxLength);
+  },
+
+  // 26. Uppercase only with limit
+  uppercaseOnly: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.toUpperCase().substring(0, maxLength);
   }
 };
 
@@ -323,5 +399,155 @@ export const validateField = (fieldName, value, validatorName) => {
   return {
     isValid: !error,
     error
+  };
+};
+
+// =================== INPUT FORMATTING UTILITIES ===================
+// Use these functions for formatting input values as users type
+
+export const formatInput = {
+  // Format employee ID while typing (4 letters + 4 numbers)
+  employeeId: (value) => {
+    if (!value) return '';
+    
+    // Remove non-alphanumeric, convert to uppercase
+    let formatted = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    
+    // Limit to 8 characters
+    formatted = formatted.substring(0, 8);
+    
+    // Apply formatting: first 4 positions only letters, next 4 only numbers
+    if (formatted.length > 4) {
+      const letters = formatted.substring(0, 4).replace(/[^A-Z]/g, '');
+      const numbers = formatted.substring(4).replace(/[^0-9]/g, '');
+      return letters + numbers;
+    }
+    
+    return formatted.replace(/[^A-Z]/g, '');
+  },
+
+  // Generic input formatter with max length
+  limit: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.substring(0, maxLength);
+  },
+
+  // Only allow numbers with max length
+  numbers: (value, maxLength = 10) => {
+    if (!value) return '';
+    return value.replace(/[^0-9]/g, '').substring(0, maxLength);
+  },
+
+  // Only allow letters with max length
+  letters: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.replace(/[^A-Za-z]/g, '').substring(0, maxLength);
+  },
+
+  // Auto uppercase with max length
+  uppercase: (value, maxLength = 20) => {
+    if (!value) return '';
+    return value.toUpperCase().substring(0, maxLength);
+  },
+
+  // PAN number formatter
+  panNumber: (value) => {
+    if (!value) return '';
+    
+    // Remove non-alphanumeric, convert to uppercase
+    let formatted = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    
+    // Limit to 10 characters
+    formatted = formatted.substring(0, 10);
+    
+    return formatted;
+  },
+
+  // Mobile number formatter (10 digits only)
+  mobileNumber: (value) => {
+    if (!value) return '';
+    return value.replace(/[^0-9]/g, '').substring(0, 10);
+  },
+
+  // UID/Aadhaar formatter (12 digits only)
+  uid: (value) => {
+    if (!value) return '';
+    return value.replace(/[^0-9]/g, '').substring(0, 12);
+  }
+};
+
+// =================== FORM INPUT MANAGEMENT HOOK ===================
+// Use this hook for managing form inputs with formatting and validation
+
+export const useFormInput = (initialValue = '', options = {}) => {
+  const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState(null);
+
+  const {
+    maxLength,
+    formatter,
+    validator,
+    fieldName = 'Field'
+  } = options;
+
+  const handleChange = (e) => {
+    let newValue = e.target.value;
+
+    // Apply formatter if provided
+    if (formatter) {
+      newValue = formatter(newValue);
+    }
+
+    // Apply max length if provided
+    if (maxLength && newValue.length > maxLength) {
+      newValue = newValue.substring(0, maxLength);
+    }
+
+    setValue(newValue);
+
+    // Clear error when user starts typing
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const validate = () => {
+    if (validator) {
+      const validationError = validators[validator](value, fieldName);
+      setError(validationError);
+      return !validationError;
+    }
+    return true;
+  };
+
+  const reset = () => {
+    setValue(initialValue);
+    setError(null);
+  };
+
+  const setValueWithFormatting = (newValue) => {
+    let formattedValue = newValue;
+    
+    // Apply formatter if provided
+    if (formatter) {
+      formattedValue = formatter(newValue);
+    }
+    
+    // Apply max length if provided
+    if (maxLength && formattedValue.length > maxLength) {
+      formattedValue = formattedValue.substring(0, maxLength);
+    }
+    
+    setValue(formattedValue);
+  };
+
+  return {
+    value,
+    error,
+    onChange: handleChange,
+    validate,
+    reset,
+    setValue: setValueWithFormatting,
+    setError
   };
 };

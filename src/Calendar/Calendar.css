@@ -1,0 +1,142 @@
+.calendar-container {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.calendar-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.calendar-form input,
+.calendar-form select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.calendar-form button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.calendar-form button.secondary {
+  background: #6b7280;
+}
+
+.calendar-list {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-card h4 {
+  margin: 0;
+}
+
+.calendar-card .type {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.calendar-card .date {
+  font-size: 13px;
+  color: #374151;
+}
+
+.calendar-actions button {
+  margin-left: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-actions .danger {
+  background: #dc2626;
+  color: white;
+}
+
+.info-text {
+  color: #2563eb;
+}
+
+.error-text {
+  color: red;
+}
+
+.empty-text {
+  color: #6b7280;
+}
+.calendar-container {
+  padding: 20px;
+}
+
+.calendar-list {
+  margin-top: 20px;
+}
+
+.calendar-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-card h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.calendar-card .type {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.calendar-card .date {
+  font-size: 13px;
+  color: #374151;
+}
+
+.calendar-actions button {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-actions .danger {
+  background: #ef4444;
+  color: white;
+}
+
+.error-text {
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.empty-text {
+  color: #6b7280;
+}

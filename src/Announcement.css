@@ -1,0 +1,53 @@
+.announcement-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.announcement-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.announcement-form input,
+.announcement-form textarea {
+  flex: 1;
+  padding: 10px;
+}
+
+.announcement-card {
+  background: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+button.danger {
+  background: #ef4444;
+}
+
+button.cancel {
+  background: #6b7280;
+}
+
+.empty-text {
+  color: #6b7280;
+  text-align: center;
+}

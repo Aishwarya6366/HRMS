@@ -1,171 +1,420 @@
-import React, { useState } from "react";
-import "./Login.css";
-import { validators } from "./utils/validation";
+// import React, { Component } from 'react';
+// import { Link, Navigate } from 'react-router-dom';
+// import { FaEye, FaEyeSlash } from 'react-icons/fa';
+// import './Login.css';
+// import Header from './components/Header';
+// import loginBg from './assets/login-bg.jpeg';
 
-const Login = ({ setIsLoggedIn }) => {
-  const [employeeId, setEmployeeId] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({}); // ADDED: Error state
+// export default class Login extends Component {
+//   state = {
+//     username: '',
+//     password: '',
+//     showPassword: false,
+//     redirectTo: null,
+//     error: '',
+//     usernameError: '',
+//     passwordError: ''
+//   };
 
-  // ADDED: Validation function
-  const validateForm = () => {
-    const newErrors = {};
-    
-    // Validate Employee ID
-    const idError = validators.employeeId(employeeId);
-    if (idError) newErrors.employeeId = idError;
-    
-    // Validate Password
-    const passError = validators.password(password);
-    if (passError) newErrors.password = passError;
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+//   /* ================= INPUT HANDLER ================= */
+
+//   handleChange = (e) => {
+//     const { name, value } = e.target;
+
+//     /* -------- EMPLOYEE ID -------- */
+//     if (name === 'username') {
+//       const upperValue = value.toUpperCase();
+
+//       // max length safeguard (VPPL0001 = 8)
+//       if (upperValue.length > 8) return;
+
+//       let usernameError = '';
+
+//       // validate ONLY when length >= 7
+//       if (upperValue.length >= 7 && !/^VPPL\d{3,4}$/.test(upperValue)) {
+//         usernameError = 'Format must be VPPL001 or VPPL0001';
+//       }
+
+//       this.setState({
+//         username: upperValue,
+//         usernameError
+//       });
+//     }
+
+//     /* -------- PASSWORD -------- */
+//     if (name === 'password') {
+//       if (value.length > 20) return;
+
+//       let passwordError = '';
+//       const passwordRegex =
+//         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,20}$/;
+
+//       if (value.length > 0 && !passwordRegex.test(value)) {
+//         passwordError =
+//           '8–20 chars, 1 uppercase, 1 lowercase, 1 number & 1 special character';
+//       }
+
+//       this.setState({
+//         password: value,
+//         passwordError
+//       });
+//     }
+//   };
+
+//   togglePassword = () => {
+//     this.setState(prev => ({ showPassword: !prev.showPassword }));
+//   };
+
+//   /* ================= LOGIN ================= */
+
+//   handleLogin = (e) => {
+//     e.preventDefault();
+//     this.setState({ error: '' });
+
+//     const { username, password, usernameError, passwordError } = this.state;
+
+//     if (!username) {
+//       this.setState({ error: 'Employee ID is required' });
+//       return;
+//     }
+
+//     if (!password) {
+//       this.setState({ error: 'Password is required' });
+//       return;
+//     }
+
+//     if (usernameError || passwordError) return;
+
+//     if (!/^VPPL\d{3,4}$/.test(username)) {
+//       this.setState({
+//         error: 'Employee ID format must be VPPL001 or VPPL0001'
+//       });
+//       return;
+//     }
+
+//     fetch('http://localhost:8080/user/login', {
+//       method: 'POST',
+//       credentials: 'include',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ username, password })
+//     })
+//       .then(res => {
+//         if (!res.ok) throw new Error('Invalid username or password');
+//         return res.json();
+//       })
+//       .then(result => {
+//         const msg = result.message || '';
+
+//         if (msg.includes('status : 0')) {
+//           sessionStorage.clear();
+//           localStorage.clear();
+//           this.setState({ redirectTo: '/set-password' });
+//           return;
+//         }
+
+//         if (msg.startsWith('1')) {
+//           sessionStorage.setItem('loggedIn', 'true');
+//           sessionStorage.setItem('role', 'HR');
+//           this.setState({ redirectTo: '/hr-dashboard' });
+//           return;
+//         }
+
+//         if (msg.startsWith('2')) {
+//           sessionStorage.setItem('loggedIn', 'true');
+//           sessionStorage.setItem('role', 'EMP');
+//           this.setState({ redirectTo: '/emp-dashboard' });
+//           return;
+//         }
+
+//         this.setState({ error: 'Invalid username or password' });
+//       })
+//       .catch(err => this.setState({ error: err.message }));
+//   };
+
+//   render() {
+//     if (this.state.redirectTo) {
+//       return <Navigate to={this.state.redirectTo} replace />;
+//     }
+
+//     return (
+//       <div className="login-page">
+//         <Header />
+
+//         <div
+//           className="login-main"
+//           style={{ backgroundImage: `url(${loginBg})` }}
+//         >
+//           <div className="login-left" />
+
+//           <div className="login-right">
+//             <form className="login-box" onSubmit={this.handleLogin}>
+//               <h2>Login</h2>
+//               <p className="login-subtitle">
+//                 Enter your credentials to access your account
+//               </p>
+
+//               <label className="login-label">
+//                 Employee ID <span className="required-star">*</span>
+//               </label>
+//               <input
+//                 name="username"
+//                 value={this.state.username}
+//                 onChange={this.handleChange}
+//                 className="login-input"
+//                 placeholder="VPPL001 or VPPL0001"
+//                 required
+//               />
+//               {this.state.usernameError && (
+//                 <small className="error-message">
+//                   {this.state.usernameError}
+//                 </small>
+//               )}
+
+//               <label className="login-label">
+//                 Password <span className="required-star">*</span>
+//               </label>
+//               <div className="password-wrapper">
+//                 <input
+//                   type={this.state.showPassword ? 'text' : 'password'}
+//                   name="password"
+//                   value={this.state.password}
+//                   onChange={this.handleChange}
+//                   className="login-input password-input"
+//                   placeholder="Enter Password"
+//                   required
+//                 />
+//                 <button
+//                   type="button"
+//                   className="password-toggle"
+//                   onClick={this.togglePassword}
+//                   tabIndex={-1}
+//                 >
+//                   {this.state.showPassword ? <FaEyeSlash /> : <FaEye />}
+//                 </button>
+//               </div>
+
+//               {this.state.passwordError && (
+//                 <small className="error-message">
+//                   {this.state.passwordError}
+//                 </small>
+//               )}
+
+//               <button className="login-button">Login</button>
+
+//               <Link to="/forgot-password" className="forgot-link">
+//                 Forgot Password?
+//               </Link>
+
+//               {this.state.error && (
+//                 <div className="error-message">{this.state.error}</div>
+//               )}
+//             </form>
+//           </div>
+//         </div>
+
+//         <footer className="login-footer">
+//           © 2026 Venturebiz Promotions Private Limited. All rights reserved.
+//         </footer>
+//       </div>
+//     );
+//   }
+// }
+import React, { Component } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import './Login.css';
+import Header from './components/Header';
+import loginBg from './assets/login-bg.jpeg';
+
+export default class Login extends Component {
+  state = {
+    username: '',
+    password: '',
+    showPassword: false,
+    redirectTo: null,
+    error: '',
+    usernameError: ''
   };
 
-  const handleLogin = (e) => {
+  /* ================= INPUT HANDLER ================= */
+  handleChange = (e) => {
+    const { name, value } = e.target;
+
+    /* -------- EMPLOYEE ID -------- */
+    if (name === 'username') {
+      const upperValue = value.toUpperCase();
+
+      // max length safeguard (VPPL0001 = 8)
+      if (upperValue.length > 8) return;
+
+      let usernameError = '';
+
+      if (upperValue.length >= 7 && !/^VPPL\d{3,4}$/.test(upperValue)) {
+        usernameError = 'Format must be VPPL001 or VPPL0001';
+      }
+
+      this.setState({
+        username: upperValue,
+        usernameError
+      });
+      return;
+    }
+
+    /* -------- PASSWORD (NO VALIDATION) -------- */
+    if (name === 'password') {
+      this.setState({ password: value });
+    }
+  };
+
+  togglePassword = () => {
+    this.setState(prev => ({ showPassword: !prev.showPassword }));
+  };
+
+  /* ================= LOGIN ================= */
+  handleLogin = (e) => {
     e.preventDefault();
+    this.setState({ error: '' });
 
-    // ADDED: Validate before proceeding
-    if (!validateForm()) return;
+    const { username, password, usernameError } = this.state;
 
-    if (!employeeId || !password) return;
+    if (!username) {
+      this.setState({ error: 'Employee ID is required' });
+      return;
+    }
 
-    setIsLoggedIn(true); // Go to Register
+    if (!password) {
+      this.setState({ error: 'Password is required' });
+      return;
+    }
+
+    if (usernameError) return;
+
+    if (!/^VPPL\d{3,4}$/.test(username)) {
+      this.setState({
+        error: 'Employee ID format must be VPPL001 or VPPL0001'
+      });
+      return;
+    }
+
+    fetch('http://localhost:8080/user/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Invalid username or password');
+        return res.json();
+      })
+      .then(result => {
+        const msg = result.message || '';
+
+        if (msg.includes('status : 0')) {
+          sessionStorage.clear();
+          localStorage.clear();
+          this.setState({ redirectTo: '/set-password' });
+          return;
+        }
+
+        if (msg.startsWith('1')) {
+          sessionStorage.setItem('loggedIn', 'true');
+          sessionStorage.setItem('role', 'HR');
+          this.setState({ redirectTo: '/hr-dashboard' });
+          return;
+        }
+
+        if (msg.startsWith('2')) {
+          sessionStorage.setItem('loggedIn', 'true');
+          sessionStorage.setItem('role', 'EMP');
+          this.setState({ redirectTo: '/emp-dashboard' });
+          return;
+        }
+
+        this.setState({ error: 'Invalid username or password' });
+      })
+      .catch(err => this.setState({ error: err.message }));
   };
 
-  // ADDED: Handle blur validation
-  const handleBlur = (field) => {
-    if (field === 'employeeId') {
-      const error = validators.employeeId(employeeId);
-      setErrors(prev => ({ ...prev, employeeId: error }));
+  render() {
+    if (this.state.redirectTo) {
+      return <Navigate to={this.state.redirectTo} replace />;
     }
-    if (field === 'password') {
-      const error = validators.password(password);
-      setErrors(prev => ({ ...prev, password: error }));
-    }
-  };
 
-  // ADDED: Handle input change with error clearing
-  const handleEmployeeIdChange = (e) => {
-    setEmployeeId(e.target.value);
-    if (errors.employeeId) {
-      setErrors(prev => ({ ...prev, employeeId: null }));
-    }
-  };
+    return (
+      <div className="login-page">
+        <Header />
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    if (errors.password) {
-      setErrors(prev => ({ ...prev, password: null }));
-    }
-  };
+        <div
+          className="login-main"
+          style={{ backgroundImage: `url(${loginBg})` }}
+        >
+          <div className="login-left" />
 
-  return (
-    <div className="page">
-      {/* HEADER */}
-      <header className="header">
-        <span className="company-name">HRMS DASHBORD</span>
-      </header>
+          <div className="login-right">
+            <form className="login-box" onSubmit={this.handleLogin}>
+              <h2>Login</h2>
+              <p className="login-subtitle">
+                Enter your credentials to access your account
+              </p>
 
-      <main className="center">
-        <div className="card">
-
-          {/* NEW USER ICON + TITLE LIKE YOUR SAMPLE */}
-          <div className="login-top">
-            <div className="user-icon">
-              <svg width="55" height="55" viewBox="0 0 24 24" fill="#333">
-                <circle cx="12" cy="7" r="5" />
-                <path d="M12 14c-6 0-9 3-9 6v2h18v-2c0-3-3-6-9-6z" />
-              </svg>
-            </div>
-            <h2 className="login-heading">
-              <span className="orange">USER</span> LOGIN
-            </h2>
-          </div>
-
-          {/* LOGIN FORM */}
-          <form onSubmit={handleLogin} className="form">
-
-            <label>Employee ID</label>
-            <input
-              type="text"
-              placeholder="Enter Employee ID"
-              value={employeeId}
-              onChange={handleEmployeeIdChange}
-              onBlur={() => handleBlur('employeeId')}
-              className={errors.employeeId ? 'input-error' : ''} // ADDED: Error class
-            />
-            {/* ADDED: Error message display */}
-            {errors.employeeId && (
-              <div className="error-message">{errors.employeeId}</div>
-            )}
-
-            <label>Password</label>
-
-            <div className="password-wrapper">
+              <label className="login-label">
+                Employee ID <span className="required-star">*</span>
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter Password"
-                value={password}
-                onChange={handlePasswordChange}
-                onBlur={() => handleBlur('password')}
-                className={errors.password ? 'input-error' : ''} // ADDED: Error class
+                name="username"
+                value={this.state.username}
+                onChange={this.handleChange}
+                className="login-input"
+                placeholder="VPPL001 or VPPL0001"
+                required
               />
+              {this.state.usernameError && (
+                <small className="error-message">
+                  {this.state.usernameError}
+                </small>
+              )}
 
-              <span
-                className="toggle-eye"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="black"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 1l22 22" />
-                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-7.94" />
-                    <path d="M9.88 9.88A3 3 0 0 1 14.12 14.12" />
-                    <path d="M10.73 5.08A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-2.12 3.18" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="black"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </span>
-            </div>
-            {/* ADDED: Error message display */}
-            {errors.password && (
-              <div className="error-message">{errors.password}</div>
-            )}
+              <label className="login-label">
+                Password <span className="required-star">*</span>
+              </label>
+              <div className="password-wrapper">
+                <input
+                  type={this.state.showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={this.state.password}
+                  onChange={this.handleChange}
+                  className="login-input password-input"
+                  placeholder="Enter Password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={this.togglePassword}
+                  tabIndex={-1}
+                >
+                  {this.state.showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
 
-            <button className="btn">Login</button>
-          </form>
+              <button className="login-button">Login</button>
+
+              <Link to="/forgot-password" className="forgot-link">
+                Forgot Password?
+              </Link>
+
+              {this.state.error && (
+                <div className="error-message">{this.state.error}</div>
+              )}
+            </form>
+          </div>
         </div>
-      </main>
 
-      <footer className="footer">© 2025 Employee Portal</footer>
-    </div>
-  );
-};
+        <footer className="login-footer">
+          © 2026 Venturebiz Promotions Private Limited. All rights reserved.
+        </footer>
+      </div>
+    );
+  }
+}
 
-export default Login;
