@@ -3,8 +3,10 @@ import { Navigate } from "react-router-dom";
 
 import EmpProfile from "./EmpProfile";
 import EmpSalary from "./EmpSalary";
+import EmployeeHolidayCalendar from "./EmployeeHolidayCalendar";
 
 import "./EmpDashboard.css";
+import EmpLeaveManagement from "./EmpLeaveManagement";
 
 export default class EmpDashboard extends Component {
   state = {
@@ -13,12 +15,18 @@ export default class EmpDashboard extends Component {
     showChangePassword: false,
     sidebarOpen: false,
 
+    showNewPassword: false,
+    showConfirmPassword: false,
+
     password: "",
     confirmPassword: "",
-
     message: "",
     logout: false,
   };
+
+  // ✅ PASSWORD REGEX (ADDED – no function change)
+  passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   toggleMenu = () => {
     this.setState({ showMenu: !this.state.showMenu });
@@ -35,12 +43,20 @@ export default class EmpDashboard extends Component {
     }).then(() => this.setState({ logout: true }));
   };
 
-  /* ✅ UPDATED PASSWORD API (NO OLD PASSWORD) */
   submitPassword = () => {
     const { password, confirmPassword } = this.state;
 
     if (!password || !confirmPassword) {
       this.setState({ message: "Please fill all fields" });
+      return;
+    }
+
+    // ✅ STRONG PASSWORD VALIDATION
+    if (!this.passwordRegex.test(password)) {
+      this.setState({
+        message:
+          "Password must be 8+ chars with uppercase, lowercase, number & special character",
+      });
       return;
     }
 
@@ -53,9 +69,7 @@ export default class EmpDashboard extends Component {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        password: password,
-      }),
+      body: JSON.stringify({ password }),
     })
       .then((res) => {
         if (!res.ok) throw new Error();
@@ -80,6 +94,10 @@ export default class EmpDashboard extends Component {
         return <EmpProfile />;
       case "salary":
         return <EmpSalary />;
+      case "empleavemanagement":
+        return <EmpLeaveManagement />; 
+      case "EmployeeHolidayCalendar":
+        return <EmployeeHolidayCalendar/>; 
       default:
         return (
           <div className="dashboard-welcome">
@@ -95,26 +113,9 @@ export default class EmpDashboard extends Component {
 
     return (
       <div className="emp-dashboard">
-        {this.state.sidebarOpen && (
-          <div
-            className="sidebar-overlay"
-            onClick={() => this.setState({ sidebarOpen: false })}
-          />
-        )}
-
         {/* HEADER */}
         <header className="emp-header">
           <div className="header-left">
-            <div
-              className="hamburger"
-              onClick={() =>
-                this.setState({ sidebarOpen: !this.state.sidebarOpen })
-              }
-            >
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
             <h3>HRMS PORTAL</h3>
           </div>
 
@@ -157,6 +158,8 @@ export default class EmpDashboard extends Component {
               ["dashboard", "Dashboard"],
               ["profile", "My Profile"],
               ["salary", "Salary"],
+              ["empleavemanagement", "EmpLeaveManagement"],
+              ["EmployeeHolidayCalendar", "EmployeeHolidayCalendar"]
             ].map(([key, label]) => (
               <div
                 key={key}
@@ -182,36 +185,65 @@ export default class EmpDashboard extends Component {
             <div className="emp-modal-box">
               <h4>Change Password</h4>
 
-              <input
-                type="password"
-                placeholder="New Password"
-                value={this.state.password}
-                onChange={(e) =>
-                  this.setState({ password: e.target.value })
-                }
-              />
+              {/* New Password */}
+              <div className="password-field">
+                <input
+                  type={this.state.showNewPassword ? "text" : "password"}
+                  placeholder="New Password"
+                  value={this.state.password}
+                  maxLength={20}  
+                  onChange={(e) =>
+                    this.setState({ password: e.target.value })
+                  }
+                />
 
-              <input
-                type="password"
-                placeholder="Confirm New Password"
-                value={this.state.confirmPassword}
-                onChange={(e) =>
-                  this.setState({ confirmPassword: e.target.value })
-                }
-              />
+              </div>
+
+              {/* Confirm Password */}
+              <div className="password-field">
+                <input
+                  type={
+                    this.state.showConfirmPassword ? "text" : "password"
+                  }
+                  placeholder="Confirm New Password"
+                  value={this.state.confirmPassword}
+                  maxLength={20}  
+                  onChange={(e) =>
+                    this.setState({ confirmPassword: e.target.value })
+                  }
+                />
+                <span
+                  className="eye-icon"
+                  onClick={() =>
+                    this.setState({
+                      showConfirmPassword:
+                        !this.state.showConfirmPassword,
+                    })
+                  }
+                >
+                  {this.state.showConfirmPassword ? "🙈" : "👁️"}
+                </span>
+              </div>
 
               <div className="modal-actions">
                 <button onClick={this.submitPassword}>Update</button>
                 <button
                   onClick={() =>
-                    this.setState({ showChangePassword: false })
+                    this.setState({
+                      showChangePassword: false,
+                      password: "",
+                      confirmPassword: "",
+                      message: "",
+                    })
                   }
                 >
                   Cancel
                 </button>
               </div>
 
-              {this.state.message && <p>{this.state.message}</p>}
+              {this.state.message && (
+                <p className="error-text">{this.state.message}</p>
+              )}
             </div>
           </div>
         )}

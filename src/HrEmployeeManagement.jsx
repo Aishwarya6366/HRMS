@@ -1,144 +1,127 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "./HrEmployeeManagement.css";
 
-import { useEffect, useState } from "react"; 
-import axios from "axios"; 
-import "./HrEmployeeManagement.css"; 
-
-export default function HrEmployeeManagement() { 
+function HrEmployeeManagement() {
   const loggedInUserId = sessionStorage.getItem("userId");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [mode, setMode] = useState("create");
+  const [userId, setUserId] = useState(null);
+  
+  // Current step tracker
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 8;
 
-  const [address1Error, setAddress1Error] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [aadhaarError, setAadhaarError] = useState("");
-  const [dobError, setDobError] = useState("");
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-
- const [loading, setLoading] = useState(false);
- const [emergencyNameError, setEmergencyNameError] = useState("");
-  const [message, setMessage] = useState(""); 
-  const [mode, setMode] = useState("create"); // 'create' or 'edit' 
-  const [userId, setUserId] = useState(null); 
-  const [searchValue, setSearchValue] = useState(""); 
-  const [searchResults, setSearchResults] = useState([]); 
+  // Search states
+  const [searchValue, setSearchValue] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [dateOfJoiningError, setDateOfJoiningError] = useState("");
-  const [emergencyPhoneError, setEmergencyPhoneError] = useState("");
 
+  // Manager search states
+  const [managerSearchValue, setManagerSearchValue] = useState("");
+  const [managerSearchResults, setManagerSearchResults] = useState([]);
+  const [showManagerSearch, setShowManagerSearch] = useState(false);
+  const [managerSearchLoading, setManagerSearchLoading] = useState(false);
+  const [selectedManager, setSelectedManager] = useState(null);
 
-  
-  /* ================= API DATA ================= */ 
-  const [departments, setDepartments] = useState([]); 
-  const [designations, setDesignations] = useState([]); 
+  // API data
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
   const [percentages, setPercentages] = useState(null);
-  
-  /* ================= FORM STATE ================= */ 
-  const [form, setForm] = useState({ 
-    personalDetailsDTO: { 
-      firstName: "", 
-      middleName: "", 
-      lastName: "", 
-      gender: "", 
-      dob: "", 
-      nationality: "", 
-      maritalStatus: "", 
-      bloodGroup: "", 
-      aadhaarNumber: "", 
-      panNumber: "", 
-      phoneNumber: "", 
-      emailId: "", 
-      address1: "", 
-      address2: "", 
-      emergencyContactName: "", 
-      emergencyContactRelation: "", 
-      emergencyPhoneNumber: "", 
-    }, 
-    jobDetailsDTO: { 
-      departmentId: "", 
-      designationId: "", 
-      workLocation: "Bangalore", 
-      dateOfJoining: "", 
-    }, 
-    bankDetailsDTO: { 
-      bankName: "", 
-      accountNumber: "", 
-      ifsc: "", 
-    }, 
-    employeeStatutoryDetailsDTO: { 
-      pfUan: "", 
-      esi: "", 
-      min: "", 
-    }, 
-    salaryDetailsDTO: { 
-      ctc: "", 
-      basic: "", 
-      hra: "", 
-      conveyanceAllowance: "", 
-      pf: "", 
-    }, 
-  }); 
-  
-  // Add net salary state for display
+  const [documents, setDocuments] = useState([]);
+
+  // Form state
+  const [form, setForm] = useState({
+    personalDetailsDTO: {
+      firstName: "", middleName: "", lastName: "", gender: "", dob: "",
+      nationality: "", maritalStatus: "", bloodGroup: "", aadhaarNumber: "",
+      panNumber: "", phoneNumber: "", emailId: "", address1: "", address2: "",
+      emergencyContactName: "", emergencyContactRelation: "", emergencyPhoneNumber: "",
+    },
+    jobDetailsDTO: {
+      departmentId: "", designationId: "", workLocation: "", dateOfJoining: "",
+    },
+    bankDetailsDTO: {
+      bankName: "", accountNumber: "", ifsc: "", branchName: "", beneficiaryName: "",
+    },
+    employeeStatutoryDetailsDTO: {
+      pfUan: "", esi: "", min: "",
+    },
+    salaryDetailsDTO: {
+      ctc: "", basic: "", hra: "", conveyanceAllowance: "", pf: "",
+    },
+    empMgrDto: {
+      mgrId: "",
+    }
+  });
+
   const [netSalary, setNetSalary] = useState(0);
-  
-  /* ================= FETCH DEPARTMENTS, DESIGNATIONS & SALARY PERCENTAGES ================= */ 
-  useEffect(() => { 
-    // Fetch departments 
-    axios.get("http://localhost:8080/api/departments", { withCredentials: true }) 
-      .then((res) => setDepartments(res.data)) 
-      .catch((err) => console.error("Department API error", err)); 
-    
-    // Fetch designations 
-    axios.get("http://localhost:8080/api/designations", { withCredentials: true }) 
-      .then((res) => setDesignations(res.data)) 
-      .catch((err) => console.error("Designation API error", err)); 
-    
-    // Fetch salary calculation percentages 
-    axios.get("http://localhost:8080/salary/calculator/get", { withCredentials: true }) 
-      .then((res) => { 
-        console.log("Salary API response:", res.data); 
-        
-        // ✅ pick record with actual percentages
-        const validItem = Array.isArray(res.data) 
+  const [uploadedFiles, setUploadedFiles] = useState({});
+  const [existingDocuments, setExistingDocuments] = useState([]);
+  const [uploadingDocuments, setUploadingDocuments] = useState({});
+
+  // Step definitions
+  const steps = [
+    { number: 1, title: "Search Employee", icon: "🔍" },
+    { number: 2, title: "Personal Details", icon: "👤" },
+    { number: 3, title: "Contact Information", icon: "📞" },
+    { number: 4, title: "Job Details", icon: "💼" },
+    { number: 5, title: "Manager Assignment", icon: "👔" },
+    { number: 6, title: "Bank Details", icon: "🏦" },
+    { number: 7, title: "Salary & Statutory", icon: "💰" },
+    { number: 8, title: "Document Uploads", icon: "📄" }
+  ];
+
+  // Fetch initial data
+  useEffect(() => {
+    axios.get("http://localhost:8080/api/departments", { withCredentials: true })
+      .then((res) => setDepartments(res.data))
+      .catch((err) => console.error("Department API error", err));
+
+    axios.get("http://localhost:8080/api/designations", { withCredentials: true })
+      .then((res) => setDesignations(res.data))
+      .catch((err) => console.error("Designation API error", err));
+
+    axios.get("http://localhost:8080/salary/calculator/get", { withCredentials: true })
+      .then((res) => {
+        const validItem = Array.isArray(res.data)
           ? res.data.find(item => item.basicPercentage > 0)
           : res.data;
-        
-        if (!validItem) {
-          console.warn("No valid salary config found");
-          return;
+        if (validItem) {
+          setPercentages({
+            basic: Number(validItem.basicPercentage),
+            hra: Number(validItem.hraPercentage),
+            pf: Number(validItem.pfPercentage),
+          });
         }
-        
-        setPercentages({
-          basic: Number(validItem.basicPercentage),
-          hra: Number(validItem.hraPercentage),
-          pf: Number(validItem.pfPercentage),
-        });
-        
-        setMessage("✅ Salary percentages loaded successfully");
-      }) 
-      .catch((err) => { 
-        console.error("Salary percentages API error", err); 
-        setMessage("⚠️ Using default salary percentages");
-      }); 
-  }, []); 
-  
-  /* ================= CALCULATE SALARY WHEN CTC OR PERCENTAGES CHANGE ================= */ 
+      })
+      .catch((err) => console.error("Salary percentages API error", err));
+
+    const documentTypes = [
+      { id: 1, documentName: "joining-letter", key: "joiningLetter", displayName: "Joining Letter", mandatory: true, fileType: "PDF", apiKey: "joining-letter" },
+      { id: 2, documentName: "resume", key: "resume", displayName: "Resume", mandatory: true, fileType: "PDF", apiKey: "resume" },
+      { id: 3, documentName: "resignation-letter", key: "resignationLetter", displayName: "Resignation Letter", mandatory: false, fileType: "PDF", apiKey: "resignation-letter" },
+      { id: 4, documentName: "offer-letter", key: "offerLetter", displayName: "Offer Letter", mandatory: true, fileType: "PDF", apiKey: "offer-letter" },
+      { id: 5, documentName: "photograph", key: "photograph", displayName: "Photograph", mandatory: true, fileType: "JPG/PNG", apiKey: "photograph" },
+    ];
+    setDocuments(documentTypes);
+  }, []);
+
+  // Auto-calculate salary
   useEffect(() => {
     if (!percentages || !form.salaryDetailsDTO.ctc) return;
-    
     const ctcAmount = Number(form.salaryDetailsDTO.ctc);
     if (isNaN(ctcAmount) || ctcAmount <= 0) return;
-    
-    // Calculate salary breakdown
+
     const basic = (ctcAmount * percentages.basic) / 100;
     const hra = (basic * percentages.hra) / 100;
     const pf = (basic * percentages.pf) / 100;
     const conveyanceAllowance = ctcAmount - (basic + hra + pf);
-    const net = ctcAmount - pf; // Net salary = CTC - PF
-    
-    // Update form with calculated values
+    const net = ctcAmount - pf;
+
     setForm(prev => ({
       ...prev,
       salaryDetailsDTO: {
@@ -149,1422 +132,1035 @@ export default function HrEmployeeManagement() {
         conveyanceAllowance: conveyanceAllowance.toFixed(0)
       }
     }));
-    
-    // Set net salary for display
     setNetSalary(net.toFixed(0));
-    
-    // Show calculation message
-    if (ctcAmount > 0) {
-      setMessage(`✅ Salary calculated: Basic (${percentages.basic}%), HRA (${percentages.hra}%), PF (${percentages.pf}%)`);
-    }
   }, [form.salaryDetailsDTO.ctc, percentages]);
-  
-  /* ================= HANDLE INPUT ================= */ 
-  const handleChange = (section, field, value) => { 
-    setForm((prev) => ({ 
-      ...prev, 
-      [section]: { ...prev[section], [field]: value }, 
-    })); 
+
+  const handleChange = (section, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [section]: { ...prev[section], [field]: value },
+    }));
   };
 
-  const handleDobChange = (value) => {
-  if (!value) {
-    setDobError("Date of Birth is required");
-    handleChange("personalDetailsDTO", "dob", "");
-    return;
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const dob = new Date(value);
-  dob.setHours(0, 0, 0, 0);
-
-  // ❌ Future date check
-  if (dob > today) {
-    setDobError("Date of Birth cannot be a future date");
-    handleChange("personalDetailsDTO", "dob", "");
-    return;
-  }
-
-  // ✅ Age calculation
-  const age = today.getFullYear() - dob.getFullYear();
-  const monthDiff = today.getMonth() - dob.getMonth();
-  const dayDiff = today.getDate() - dob.getDate();
-
-  const isBelow20 =
-    age < 20 ||
-    (age === 20 && (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)));
-
-  if (isBelow20) {
-    setDobError("Employee must be at least 20 years old");
-    handleChange("personalDetailsDTO", "dob", "");
-    return;
-  }
-
-  setDobError("");
-  handleChange("personalDetailsDTO", "dob", value);
-};
-
-  const handleAadhaarChange = (value) => {
-  // allow digits only
-  const cleaned = value.replace(/\D/g, "");
-
-  // max 12 digits
-  if (cleaned.length > 12) return;
-
-  // Aadhaar must not start with 0 or 1
-  if (cleaned.length === 1 && /^[01]$/.test(cleaned)) {
-    setAadhaarError("Aadhaar number must not start with 0 or 1");
-    handleChange("personalDetailsDTO", "aadhaarNumber", "");
-    return;
-  }
-
-  // full validation (12 digits, starts with 2–9)
-  if (cleaned.length === 12 && !/^[2-9][0-9]{11}$/.test(cleaned)) {
-    setAadhaarError("Enter a valid 12-digit Aadhaar number");
-    handleChange("personalDetailsDTO", "aadhaarNumber", "");
-    return;
-  }
-
-  setAadhaarError("");
-  handleChange("personalDetailsDTO", "aadhaarNumber", cleaned);
-};
-
-  const handlePhoneNumberChange = (value) => {
-  // allow digits only
-  const cleaned = value.replace(/\D/g, "");
-
-  // max 10 digits
-  if (cleaned.length > 10) return;
-
-  // starting digit validation
-  if (cleaned.length === 1 && !/^[6-9]$/.test(cleaned)) {
-    setPhoneError(
-      "Phone number must start with 6, 7, 8, or 9"
-    );
-    handleChange("personalDetailsDTO", "phoneNumber", "");
-    return;
-  }
-
-  // full validation when 10 digits
-  if (cleaned.length === 10 && !/^[6-9][0-9]{9}$/.test(cleaned)) {
-    setPhoneError("Enter a valid 10-digit phone number");
-    handleChange("personalDetailsDTO", "phoneNumber", "");
-    return;
-  }
-
-  setPhoneError("");
-  handleChange("personalDetailsDTO", "phoneNumber", cleaned);
-};
-const handleFirstNameChange = (value) => {
-  // allow alphabets and spaces only
-  let cleaned = value.replace(/[^A-Za-z\s]/g, "");
-
-  // max 50 characters (safe cap)
-  if (cleaned.length > 50) {
-    cleaned = cleaned.slice(0, 50);
-  }
-
-  handleChange("personalDetailsDTO", "firstName", cleaned);
-
-  const trimmed = cleaned.trim();
-
-  if (trimmed.length > 0 && trimmed.length < 2) {
-    setFirstNameError("First Name must contain at least 2 characters");
-    return;
-  }
-
-  setFirstNameError("");
-};
-const handleLastNameChange = (value) => {
-  // allow alphabets and spaces only
-  let cleaned = value.replace(/[^A-Za-z\s]/g, "");
-
-  // restrict to 50 characters
-  if (cleaned.length > 50) {
-    cleaned = cleaned.slice(0, 50);
-    setLastNameError("Last Name cannot exceed 50 characters");
-  } else {
-    setLastNameError("");
-  }
-
-  handleChange("personalDetailsDTO", "lastName", cleaned);
-};
-
-
-  const handleEmailChange = (value) => {
-  handleChange("personalDetailsDTO", "emailId", value);
-
-  const trimmed = value.trim();
-
-  // Allow empty while typing
-  if (!trimmed) {
-    setEmailError("");
-    return;
-  }
-
-  const emailRegex =
-    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-  if (!emailRegex.test(trimmed)) {
-    setEmailError("Enter a valid email address (example@domain.com)");
-    return;
-  }
-
-  setEmailError("");
-};
- 
-  const handleAddress1Change = (value) => {
-  // limit to 200 characters
-  if (value.length > 200) {
-    setAddress1Error("Current Address cannot exceed 200 characters");
-    handleChange(
-      "personalDetailsDTO",
-      "address1",
-      value.slice(0, 200)
-    );
-    return;
-  }
-
-  handleChange("personalDetailsDTO", "address1", value);
-
-  const trimmed = value.trim();
-
-  if (trimmed.length > 0 && trimmed.length < 10) {
-    setAddress1Error(
-      "Current Address must contain at least 10 characters"
-    );
-    return;
-  }
-
-  setAddress1Error("");
-};
-
-const handleEmergencyNameChange = (value) => {
-  // allow alphabets and spaces only
-  let cleaned = value.replace(/[^A-Za-z\s]/g, "");
-
-  // limit to 50 characters
-  if (cleaned.length > 50) {
-    cleaned = cleaned.slice(0, 50);
-    setEmergencyNameError(
-      "Emergency Contact Name cannot exceed 50 characters"
-    );
-    handleChange("personalDetailsDTO", "emergencyContactName", cleaned);
-    return;
-  }
-
-  handleChange("personalDetailsDTO", "emergencyContactName", cleaned);
-
-  const trimmed = cleaned.trim();
-
-  if (trimmed.length > 0 && trimmed.length < 2) {
-    setEmergencyNameError(
-      "Emergency Contact Name must contain at least 2 characters"
-    );
-    return;
-  }
-
-  setEmergencyNameError("");
-};
-
-
-
-  const handleEmergencyPhoneChange = (value) => {
-  // digits only
-  const cleaned = value.replace(/\D/g, "");
-
-  // max 10 digits
-  if (cleaned.length > 10) return;
-
-  // validate starting digit
-  if (cleaned.length === 1 && !/^[6-9]$/.test(cleaned)) {
-    setEmergencyPhoneError(
-      "Emergency contact number must start with 6, 7, 8, or 9"
-    );
-    handleChange("personalDetailsDTO", "emergencyPhoneNumber", "");
-    return;
-  }
-
-  // full validation (10 digits)
-  if (cleaned.length === 10 && !/^[6-9][0-9]{9}$/.test(cleaned)) {
-    setEmergencyPhoneError(
-      "Enter a valid 10-digit emergency contact number"
-    );
-    handleChange("personalDetailsDTO", "emergencyPhoneNumber", "");
-    return;
-  }
-
-  setEmergencyPhoneError("");
-  handleChange("personalDetailsDTO", "emergencyPhoneNumber", cleaned);
-};
-
-
-  const handleDateOfJoiningChange = (value) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const selectedDate = new Date(value);
-
-  if (selectedDate > today) {
-    setDateOfJoiningError("Date of Joining cannot be a future date");
-    handleChange("jobDetailsDTO", "dateOfJoining", "");
-    return;
-  }
-
-  setDateOfJoiningError("");
-  handleChange("jobDetailsDTO", "dateOfJoining", value);
-};
-
-  /* ================= VALIDATE FORM ================= */
-  const validateForm = () => {
-    const {
-      personalDetailsDTO: p,
-      jobDetailsDTO: j,
-      bankDetailsDTO: b,
-      employeeStatutoryDetailsDTO: s,
-      salaryDetailsDTO: sal,
-    } = form;
-
-    // PERSONAL DETAILS
-    if (!p.firstName.trim()) return alert("First Name is required"), false;
-    if (!p.lastName.trim()) return alert("Last Name is required"), false;
-    if (!p.gender) return alert("Gender is required"), false;
-    if (!p.dob) return alert("Date of Birth is required"), false;
-    if (!p.nationality) return alert("Nationality is required"), false;
-    if (!p.maritalStatus) return alert("Marital Status is required"), false;
-if (address1Error) return false;
-if (emailError) return false;
-if (aadhaarError) return false;
-if (dobError) return false;
-if (firstNameError) return false;
-if (lastNameError) return false;
-
-
-
-    if (!/^[2-9][0-9]{11}$/.test(p.aadhaarNumber))
-  return alert("Aadhaar number must be 12 digits and not start with 0 or 1"), false;
-
-
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(p.panNumber.toUpperCase()))
-      return alert("Invalid PAN format (ABCDE1234F)"), false;
-
-    if (!/^[0-9]{10}$/.test(p.phoneNumber))
-      return alert("Phone Number must be 10 digits"), false;
-
-if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.emailId))
-  return alert("Enter a valid Email Address"), false;
-
-
-if (!p.address1.trim() || p.address1.trim().length < 10)
-  return alert("Current Address must be at least 10 characters"), false;
-
-    if (dateOfJoiningError) return false;
-
-    if (emergencyPhoneError) return false;
-
-
-
-    if (!p.emergencyContactName.trim())
-      return alert("Emergency Contact Name is required"), false;
-
-    if (!p.emergencyContactRelation)
-      return alert("Emergency Contact Relation is required"), false;
-
-    if (!/^[0-9]{10}$/.test(p.emergencyPhoneNumber))
-      return alert("Emergency Contact Number must be 10 digits"), false;
-
-    // JOB DETAILS
-    if (!j.departmentId || Number(j.departmentId) <= 0)
-      return alert("Select a valid Department"), false;
-
-    if (!j.designationId || Number(j.designationId) <= 0)
-      return alert("Select a valid Designation"), false;
-
-    if (!j.dateOfJoining)
-      return alert("Date of Joining is required"), false;
-
-    if (!j.workLocation.trim())
-      return alert("Work Location is required"), false;
-
-    // BANK DETAILS
-    if (!b.bankName.trim())
-      return alert("Bank Name is required"), false;
-    if (!/^[0-9]{9,18}$/.test(b.accountNumber))
-      return alert("Account Number must be 9 to 18 digits"), false;
-
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(b.ifsc.toUpperCase()))
-      return alert("Invalid IFSC Code"), false;
-
-    // STATUTORY DETAILS
-    if (!s.pfUan || !/^[0-9]{12}$/.test(s.pfUan))
-      return alert("Valid PF UAN (12 digits) is required"), false;
-
-    if (!s.esi.trim())
-      return alert("ESI Number is required"), false;
-
-    if (!s.min.trim())
-      return alert("Medical Insurance Number is required"), false;
-
-    // SALARY DETAILS
-    if (!sal.ctc || Number(sal.ctc) <= 0)
-      return alert("CTC must be greater than 0"), false;
-
-    // Check if salary has been calculated
-    if (!sal.basic || Number(sal.basic) <= 0) {
-      alert("Please wait for salary calculation to complete");
-      return false;
+  // Navigation handlers
+  const nextStep = () => {
+    if (validateCurrentStep()) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
 
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goToStep = (step) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Validation for current step
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 2: // Personal Details
+        if (!form.personalDetailsDTO.firstName || !form.personalDetailsDTO.lastName) {
+          setMessage("❌ Please enter first name and last name");
+          return false;
+        }
+        if (!form.personalDetailsDTO.gender || !form.personalDetailsDTO.dob) {
+          setMessage("❌ Please select gender and date of birth");
+          return false;
+        }
+        break;
+      case 3: // Contact Information
+        if (!form.personalDetailsDTO.phoneNumber || !form.personalDetailsDTO.emailId) {
+          setMessage("❌ Please enter phone number and email");
+          return false;
+        }
+        if (!form.personalDetailsDTO.address1) {
+          setMessage("❌ Please enter current address");
+          return false;
+        }
+        break;
+      case 4: // Job Details
+        if (!form.jobDetailsDTO.departmentId || !form.jobDetailsDTO.designationId) {
+          setMessage("❌ Please select department and designation");
+          return false;
+        }
+        if (!form.jobDetailsDTO.dateOfJoining) {
+          setMessage("❌ Please select date of joining");
+          return false;
+        }
+        break;
+      case 6: // Bank Details
+        if (!form.bankDetailsDTO.bankName || !form.bankDetailsDTO.accountNumber || !form.bankDetailsDTO.ifsc) {
+          setMessage("❌ Please fill in all bank details");
+          return false;
+        }
+        break;
+      case 7: // Salary
+        if (!form.salaryDetailsDTO.ctc || Number(form.salaryDetailsDTO.ctc) <= 0) {
+          setMessage("❌ Please enter valid CTC amount");
+          return false;
+        }
+        break;
+    }
+    setMessage("");
     return true;
   };
-  
-  /* ================= ENHANCED SEARCH EMPLOYEE ================= */ 
-  const handleSearch = async () => { 
+
+  // Search employee
+  const handleSearch = async () => {
     if (!searchValue.trim()) {
-      setMessage("Please enter a search term (employee code, name, email, or phone)");
+      setMessage("Please enter a search term");
       return;
     }
-    
-    try { 
+    try {
       setSearchLoading(true);
-      setMessage(""); 
-      setSearchResults([]);
-      setSelectedEmployee(null);
       setShowSearchResults(true);
-      
-      const res = await axios.get(`http://localhost:8080/dept/hr/emp/search?value=${searchValue}`, { 
-        withCredentials: true 
-      }); 
-      
-      let results = [];
-      if (Array.isArray(res.data)) {
-        results = res.data;
-      } else if (res.data) {
-        results = [res.data];
-      }
-      
+      const res = await axios.get(`http://localhost:8080/dept/hr/emp/search?value=${searchValue}`, { withCredentials: true });
+      const results = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
       setSearchResults(results);
-      
       if (results.length === 0) {
-        setMessage("No employees found. You can create a new one.");
-      } else if (results.length === 1) {
-        setSelectedEmployee(results[0]);
+        setMessage("No employees found");
       }
-    } catch (err) { 
-      console.error("Search error:", err); 
-      setMessage("❌ Failed to search employee."); 
-      setSearchResults([]);
-      setSelectedEmployee(null);
+    } catch (err) {
+      setMessage("❌ Failed to search employee");
     } finally {
       setSearchLoading(false);
-    } 
-  }; 
-  
-  /* ================= SELECT EMPLOYEE FOR EDITING ================= */ 
-  const selectEmployeeForEdit = (employeeData) => { 
-    setSelectedEmployee(employeeData);
-  }; 
-  
-  /* ================= LOAD SELECTED EMPLOYEE INTO FORM ================= */ 
-  const loadSelectedEmployee = () => { 
+    }
+  };
+
+  const loadSelectedEmployee = async () => {
     if (!selectedEmployee) {
-      setMessage("❌ Please select an employee first.");
+      setMessage("❌ Please select an employee first");
       return;
     }
-    
     const fetchedUserId = selectedEmployee.ftechUserId?.userid;
-    setUserId(fetchedUserId || null); 
+    setUserId(fetchedUserId || null);
     
-    setForm({ 
-      personalDetailsDTO: { 
-        firstName: selectedEmployee.personalDetailsDTO.firstName || "", 
-        middleName: selectedEmployee.personalDetailsDTO.middleName || "", 
-        lastName: selectedEmployee.personalDetailsDTO.lastName || "", 
-        gender: selectedEmployee.personalDetailsDTO.gender || "", 
-        dob: selectedEmployee.personalDetailsDTO.dob || "", 
-        nationality: selectedEmployee.personalDetailsDTO.nationality || "", 
-        maritalStatus: selectedEmployee.personalDetailsDTO.maritalStatus || "", 
-        bloodGroup: selectedEmployee.personalDetailsDTO.bloodGroup || "", 
-        aadhaarNumber: selectedEmployee.personalDetailsDTO.aadhaarNumber || "", 
-        panNumber: selectedEmployee.personalDetailsDTO.panNumber || "", 
-        phoneNumber: selectedEmployee.personalDetailsDTO.phoneNumber || "", 
-        emailId: selectedEmployee.personalDetailsDTO.emailId || "", 
-        address1: selectedEmployee.personalDetailsDTO.address1 || "", 
-        address2: selectedEmployee.personalDetailsDTO.address2 || "", 
-        emergencyContactName: selectedEmployee.personalDetailsDTO.emergencyContactName || "", 
-        emergencyContactRelation: selectedEmployee.personalDetailsDTO.emergencyContactRelation || "", 
-        emergencyPhoneNumber: selectedEmployee.personalDetailsDTO.emergencyPhoneNumber || "", 
-      }, 
-      jobDetailsDTO: { 
-        departmentId: selectedEmployee.jobDetailsDTO.departmentId ? selectedEmployee.jobDetailsDTO.departmentId.toString() : "", 
-        designationId: selectedEmployee.jobDetailsDTO.designationId ? selectedEmployee.jobDetailsDTO.designationId.toString() : "", 
-        workLocation: selectedEmployee.jobDetailsDTO.workLocation || "Bangalore", 
-        dateOfJoining: selectedEmployee.jobDetailsDTO.dateOfJoining || "", 
-      }, 
-      bankDetailsDTO: { 
-        bankName: selectedEmployee.bankDetailsDTO.bankName || "", 
-        accountNumber: selectedEmployee.bankDetailsDTO.accountNumber ? selectedEmployee.bankDetailsDTO.accountNumber.toString() : "", 
-        ifsc: selectedEmployee.bankDetailsDTO.ifsc || "", 
-      }, 
-      employeeStatutoryDetailsDTO: { 
-        pfUan: selectedEmployee.employeeStatutoryDetailsDTO.pfUan || "", 
-        esi: selectedEmployee.employeeStatutoryDetailsDTO.esi || "", 
-        min: selectedEmployee.employeeStatutoryDetailsDTO.min || "", 
-      }, 
-      salaryDetailsDTO: { 
-        ctc: selectedEmployee.salaryDetailsDTO.ctc ? selectedEmployee.salaryDetailsDTO.ctc.toString() : "", 
-        basic: selectedEmployee.salaryDetailsDTO.basic ? selectedEmployee.salaryDetailsDTO.basic.toString() : "", 
-        hra: selectedEmployee.salaryDetailsDTO.hra ? selectedEmployee.salaryDetailsDTO.hra.toString() : "", 
-        conveyanceAllowance: selectedEmployee.salaryDetailsDTO.conveyanceAllowance ? selectedEmployee.salaryDetailsDTO.conveyanceAllowance.toString() : "", 
-        pf: selectedEmployee.salaryDetailsDTO.pf ? selectedEmployee.salaryDetailsDTO.pf.toString() : "", 
-      }, 
-    }); 
-    
+    setForm({
+      personalDetailsDTO: {
+        firstName: selectedEmployee.personalDetailsDTO.firstName || "",
+        middleName: selectedEmployee.personalDetailsDTO.middleName || "",
+        lastName: selectedEmployee.personalDetailsDTO.lastName || "",
+        gender: selectedEmployee.personalDetailsDTO.gender || "",
+        dob: selectedEmployee.personalDetailsDTO.dob || "",
+        nationality: selectedEmployee.personalDetailsDTO.nationality || "",
+        maritalStatus: selectedEmployee.personalDetailsDTO.maritalStatus || "",
+        bloodGroup: selectedEmployee.personalDetailsDTO.bloodGroup || "",
+        aadhaarNumber: selectedEmployee.personalDetailsDTO.aadhaarNumber || "",
+        panNumber: selectedEmployee.personalDetailsDTO.panNumber || "",
+        phoneNumber: selectedEmployee.personalDetailsDTO.phoneNumber || "",
+        emailId: selectedEmployee.personalDetailsDTO.emailId || "",
+        address1: selectedEmployee.personalDetailsDTO.address1 || "",
+        address2: selectedEmployee.personalDetailsDTO.address2 || "",
+        emergencyContactName: selectedEmployee.personalDetailsDTO.emergencyContactName || "",
+        emergencyContactRelation: selectedEmployee.personalDetailsDTO.emergencyContactRelation || "",
+        emergencyPhoneNumber: selectedEmployee.personalDetailsDTO.emergencyPhoneNumber || "",
+      },
+      jobDetailsDTO: {
+        departmentId: selectedEmployee.jobDetailsDTO.departmentId?.toString() || "",
+        designationId: selectedEmployee.jobDetailsDTO.designationId?.toString() || "",
+        workLocation: selectedEmployee.jobDetailsDTO.workLocation || "",
+        dateOfJoining: selectedEmployee.jobDetailsDTO.dateOfJoining || "",
+      },
+      bankDetailsDTO: {
+        bankName: selectedEmployee.bankDetailsDTO.bankName || "",
+        accountNumber: selectedEmployee.bankDetailsDTO.accountNumber?.toString() || "",
+        ifsc: selectedEmployee.bankDetailsDTO.ifsc || "",
+        branchName: selectedEmployee.bankDetailsDTO.branchName || "",
+        beneficiaryName: selectedEmployee.bankDetailsDTO.beneficiaryName || "",
+      },
+      employeeStatutoryDetailsDTO: {
+        pfUan: selectedEmployee.employeeStatutoryDetailsDTO.pfUan || "",
+        esi: selectedEmployee.employeeStatutoryDetailsDTO.esi || "",
+        min: selectedEmployee.employeeStatutoryDetailsDTO.min || "",
+      },
+      salaryDetailsDTO: {
+        ctc: selectedEmployee.salaryDetailsDTO.ctc?.toString() || "",
+        basic: selectedEmployee.salaryDetailsDTO.basic?.toString() || "",
+        hra: selectedEmployee.salaryDetailsDTO.hra?.toString() || "",
+        conveyanceAllowance: selectedEmployee.salaryDetailsDTO.conveyanceAllowance?.toString() || "",
+        pf: selectedEmployee.salaryDetailsDTO.pf?.toString() || "",
+      },
+      empMgrDto: {
+        mgrId: selectedEmployee.empMgrDto?.mgrId?.toString() || "",
+      }
+    });
+
+    if (fetchedUserId) {
+      try {
+        const res = await axios.get(`http://localhost:8080/hr/search-doc/${fetchedUserId}`, { withCredentials: true });
+        setExistingDocuments(res.data);
+      } catch (err) {
+        console.error("Documents fetch error", err);
+      }
+    }
+
     setMode(fetchedUserId ? "edit" : "create");
     setShowSearchResults(false);
     setSelectedEmployee(null);
     setSearchValue("");
-    setMessage(fetchedUserId ? `✅ Employee loaded for editing. User ID: ${fetchedUserId}` : "✅ Employee loaded. You can now update the details."); 
-  }; 
-  
-  /* ================= SUBMIT EMPLOYEE ONBOARDING/EDIT ================= */ 
-  const submitEmployeeOnboarding = async () => { 
-    try { 
-      setLoading(true); 
-      setMessage(""); 
-      
-      const payload = { 
-        personalDetailsDTO: { 
-          firstName: form.personalDetailsDTO.firstName, 
-          middleName: form.personalDetailsDTO.middleName || null, 
-          lastName: form.personalDetailsDTO.lastName, 
-          gender: form.personalDetailsDTO.gender.toUpperCase(), 
-          dob: form.personalDetailsDTO.dob, 
-          nationality: form.personalDetailsDTO.nationality, 
-          maritalStatus: form.personalDetailsDTO.maritalStatus.toUpperCase(), 
-          bloodGroup: form.personalDetailsDTO.bloodGroup, 
-          aadhaarNumber: form.personalDetailsDTO.aadhaarNumber, 
-          panNumber: form.personalDetailsDTO.panNumber.toUpperCase(), 
-          phoneNumber: form.personalDetailsDTO.phoneNumber, 
-          emailId: form.personalDetailsDTO.emailId, 
-          address1: form.personalDetailsDTO.address1, 
-          address2: form.personalDetailsDTO.address2, 
-          emergencyContactName: form.personalDetailsDTO.emergencyContactName, 
-          emergencyContactRelation: form.personalDetailsDTO.emergencyContactRelation || null, 
-          emergencyPhoneNumber: form.personalDetailsDTO.emergencyPhoneNumber, 
-        }, 
-        jobDetailsDTO: { 
-          departmentId: Number(form.jobDetailsDTO.departmentId), 
-          designationId: Number(form.jobDetailsDTO.designationId), 
-          workLocation: form.jobDetailsDTO.workLocation, 
-          dateOfJoining: form.jobDetailsDTO.dateOfJoining, 
-        }, 
-        salaryDetailsDTO: { 
-          ctc: Number(form.salaryDetailsDTO.ctc), 
-          basic: Number(form.salaryDetailsDTO.basic), 
-          hra: Number(form.salaryDetailsDTO.hra), 
-          conveyanceAllowance: Number(form.salaryDetailsDTO.conveyanceAllowance), 
-          pf: form.salaryDetailsDTO.pf ? Number(form.salaryDetailsDTO.pf) : null, 
-        }, 
-        bankDetailsDTO: { 
-          bankName: form.bankDetailsDTO.bankName, 
-          accountNumber: form.bankDetailsDTO.accountNumber, 
-          ifsc: form.bankDetailsDTO.ifsc, 
-        }, 
-        employeeStatutoryDetailsDTO: { 
-          pfUan: form.employeeStatutoryDetailsDTO.pfUan || null, 
-          esi: form.employeeStatutoryDetailsDTO.esi || null, 
-          min: form.employeeStatutoryDetailsDTO.min || null, 
-        } 
-      }; 
-      
-      console.log("Submitting employee payload:", JSON.stringify(payload, null, 2)); 
-      
-      let response; 
-      if (mode === "create") { 
-        response = await axios.post( 
-          "http://localhost:8080/dept/hr/onboarding", 
-          payload, 
-          { 
-            withCredentials: true, 
-            headers: { 
-              'Content-Type': 'application/json' 
-            } 
-          } 
-        ); 
-        console.log("Employee onboarding response:", response.data); 
-        
-        return { 
-          success: true,
-          message: "Employee onboarded successfully",
-          data: response.data
-        };
-        
-      } else { 
-        if (!userId) {
-          throw new Error("User ID is required for editing");
-        }
-        
-        response = await axios.put( 
-          `http://localhost:8080/dept/hr/employee/edit?userId=${userId}`, 
-          payload, 
-          { 
-            withCredentials: true, 
-            headers: { 
-              'Content-Type': 'application/json' 
-            } 
-          } 
-        ); 
-        console.log("Employee edit response:", response.data); 
-        
-        return { 
-          success: true,
-          message: "Employee details updated successfully",
-          data: response.data
-        };
-      } 
-    } catch (err) { 
-      console.error("Employee submission error:", err); 
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message; 
-      throw new Error(`Employee submission failed: ${errorMessage}`); 
-    } finally {
-      setLoading(false);
+    setMessage("✅ Employee loaded for editing");
+    setCurrentStep(2); // Move to next step after loading
+  };
+
+  const handleFileChange = async (docKey, file) => {
+    if (!file) return;
+    if (mode === "edit" && userId) {
+      await uploadDocumentImmediately(docKey, file);
+    } else {
+      setUploadedFiles(prev => ({ ...prev, [docKey]: file }));
+      setMessage(`📁 ${getDocumentDisplayName(docKey)} selected`);
     }
-  }; 
-  
-  /* ================= MAIN SUBMIT FUNCTION ================= */ 
-  const submitEmployee = async () => {
-    if (!validateForm()) return;
+  };
 
+  const uploadDocumentImmediately = async (docKey, file) => {
+    if (!userId) return;
+    const docConfig = documents.find(d => d.key === docKey);
+    if (!docConfig) return;
+
+    setUploadingDocuments(prev => ({ ...prev, [docKey]: true }));
     try {
-      setLoading(true);
-      setMessage(`Processing ${mode === "create" ? "new" : "updated"} employee...`);
+      const existingDoc = existingDocuments.find(d => d.documentName === docConfig.documentName);
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const result = await submitEmployeeOnboarding();
-      
-      // Show success message
-      setMessage(`✅ ${result.message}`);
-      
-      // Handle response based on mode
-      if (mode === "create") {
-        // For create mode, reset the form
-        setTimeout(() => {
-          resetForm();
-        }, 1500);
+      if (existingDoc && existingDoc.docId) {
+        await axios.put(
+          `http://localhost:8080/api/v1/users/${userId}/documents/${existingDoc.docId}/replace`,
+          formData,
+          { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
+        );
+        setMessage(`✅ ${docConfig.displayName} replaced`);
       } else {
-        // For edit mode, stay in edit mode and keep the form data
-        setMode("edit");
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+        uploadFormData.append("documentType", docConfig.apiKey);
+        uploadFormData.append("userId", userId);
+        await axios.post(
+          "http://localhost:8080/dept/hr/employee/document/upload",
+          uploadFormData,
+          { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
+        );
+        setMessage(`✅ ${docConfig.displayName} uploaded`);
       }
 
+      const docsRes = await axios.get(`http://localhost:8080/hr/search-doc/${userId}`, { withCredentials: true });
+      setExistingDocuments(docsRes.data);
+    } catch (error) {
+      setMessage(`❌ Failed to upload ${docConfig.displayName}`);
+    } finally {
+      setUploadingDocuments(prev => ({ ...prev, [docKey]: false }));
+    }
+  };
+
+  const getDocumentDisplayName = (key) => {
+    const doc = documents.find(d => d.key === key);
+    return doc ? doc.displayName : key;
+  };
+
+  const getFileNameFromPath = (path) => {
+    if (!path) return "N/A";
+    const parts = path.split("/");
+    return parts[parts.length - 1] || "N/A";
+  };
+
+  const submitEmployee = async () => {
+    if (!validateCurrentStep()) return;
+    
+    try {
+      setLoading(true);
+      setMessage("Processing employee...");
+
+      if (mode === "create") {
+        const formData = new FormData();
+        const payload = {
+          personalDetailsDTO: {
+            ...form.personalDetailsDTO,
+            gender: form.personalDetailsDTO.gender.toUpperCase(),
+            maritalStatus: form.personalDetailsDTO.maritalStatus.toUpperCase(),
+            panNumber: form.personalDetailsDTO.panNumber.toUpperCase(),
+          },
+          jobDetailsDTO: {
+            ...form.jobDetailsDTO,
+            departmentId: Number(form.jobDetailsDTO.departmentId),
+            designationId: Number(form.jobDetailsDTO.designationId),
+          },
+          salaryDetailsDTO: {
+            ctc: Number(form.salaryDetailsDTO.ctc),
+            basic: Number(form.salaryDetailsDTO.basic),
+            hra: Number(form.salaryDetailsDTO.hra),
+            conveyanceAllowance: Number(form.salaryDetailsDTO.conveyanceAllowance),
+            pf: Number(form.salaryDetailsDTO.pf),
+          },
+          bankDetailsDTO: form.bankDetailsDTO,
+          employeeStatutoryDetailsDTO: form.employeeStatutoryDetailsDTO,
+          empMgrDto: { mgrId: form.empMgrDto.mgrId ? Number(form.empMgrDto.mgrId) : null },
+        };
+
+        formData.append("dto", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+        for (const docKey of Object.keys(uploadedFiles)) {
+          formData.append(docKey, uploadedFiles[docKey]);
+        }
+
+        await axios.post("http://localhost:8080/dept/hr/onboarding", formData, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setMessage("✅ Employee created successfully!");
+      } else {
+        const payload = {
+          personalDetailsDTO: {
+            ...form.personalDetailsDTO,
+            gender: form.personalDetailsDTO.gender.toUpperCase(),
+            maritalStatus: form.personalDetailsDTO.maritalStatus.toUpperCase(),
+            panNumber: form.personalDetailsDTO.panNumber.toUpperCase(),
+          },
+          jobDetailsDTO: {
+            ...form.jobDetailsDTO,
+            departmentId: Number(form.jobDetailsDTO.departmentId),
+            designationId: Number(form.jobDetailsDTO.designationId),
+          },
+          salaryDetailsDTO: {
+            ctc: Number(form.salaryDetailsDTO.ctc),
+            basic: Number(form.salaryDetailsDTO.basic),
+            hra: Number(form.salaryDetailsDTO.hra),
+            conveyanceAllowance: Number(form.salaryDetailsDTO.conveyanceAllowance),
+            pf: Number(form.salaryDetailsDTO.pf),
+          },
+          bankDetailsDTO: form.bankDetailsDTO,
+          employeeStatutoryDetailsDTO: form.employeeStatutoryDetailsDTO,
+          empMgrDto: { mgrId: form.empMgrDto.mgrId ? Number(form.empMgrDto.mgrId) : null },
+        };
+
+        await axios.put(`http://localhost:8080/dept/hr/employee/edit?userId=${userId}`, payload, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        });
+        setMessage("✅ Employee updated successfully!");
+      }
     } catch (err) {
       setMessage(`❌ ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
-  
-  /* ================= RESET FORM ================= */ 
-  const resetForm = () => { 
-    setForm({ 
-      personalDetailsDTO: { 
-        firstName: "", 
-        middleName: "", 
-        lastName: "", 
-        gender: "", 
-        dob: "", 
-        nationality: "", 
-        maritalStatus: "", 
-        bloodGroup: "", 
-        aadhaarNumber: "", 
-        panNumber: "", 
-        phoneNumber: "", 
-        emailId: "", 
-        address1: "", 
-        address2: "", 
-        emergencyContactName: "", 
-        emergencyContactRelation: "", 
-        emergencyPhoneNumber: "", 
-      }, 
-      jobDetailsDTO: { 
-        departmentId: "", 
-        designationId: "", 
-        workLocation: "Bangalore", 
-        dateOfJoining: "", 
-      }, 
-      bankDetailsDTO: { 
-        bankName: "", 
-        accountNumber: "", 
-        ifsc: "", 
-      }, 
-      employeeStatutoryDetailsDTO: { 
-        pfUan: "", 
-        esi: "", 
-        min: "", 
-      }, 
-      salaryDetailsDTO: { 
-        ctc: "", 
-        basic: "", 
-        hra: "", 
-        conveyanceAllowance: "", 
-        pf: "", 
-      }, 
-    }); 
-    setMode("create"); 
-    setUserId(null); 
-    setSearchValue(""); 
-    setSearchResults([]);
-    setSelectedEmployee(null);
-    setShowSearchResults(false);
-    setNetSalary(0);
-    setMessage(""); 
-  }; 
-  
-  /* ================= CREATE NEW EMPLOYEE ================= */ 
-  const startNewEmployee = () => {
-    resetForm();
+
+  const resetForm = () => {
+    setForm({
+      personalDetailsDTO: {
+        firstName: "", middleName: "", lastName: "", gender: "", dob: "",
+        nationality: "", maritalStatus: "", bloodGroup: "", aadhaarNumber: "",
+        panNumber: "", phoneNumber: "", emailId: "", address1: "", address2: "",
+        emergencyContactName: "", emergencyContactRelation: "", emergencyPhoneNumber: "",
+      },
+      jobDetailsDTO: { departmentId: "", designationId: "", workLocation: "", dateOfJoining: "" },
+      bankDetailsDTO: { bankName: "", accountNumber: "", ifsc: "", branchName: "", beneficiaryName: "" },
+      employeeStatutoryDetailsDTO: { pfUan: "", esi: "", min: "" },
+      salaryDetailsDTO: { ctc: "", basic: "", hra: "", conveyanceAllowance: "", pf: "" },
+      empMgrDto: { mgrId: "" }
+    });
+    setCurrentStep(1);
     setMode("create");
-    setMessage("Ready to create new employee. Fill in the details below.");
+    setUserId(null);
+    setMessage("");
   };
-  
-  return ( 
-    <div className="employee-create"> 
-      <div className="employee-card"> 
-        <div className="header-section"> 
-          <h2>{mode === "create" ? "Create Employee" : "Edit Employee"}</h2> 
-          <div className="header-actions">
-             <button className="reset-btn" onClick={resetForm} disabled={loading}> 
-              Reset Form 
-            </button> 
-          </div>
-        </div> 
-        
-        {/* ENHANCED SEARCH SECTION */} 
-        <section className="form-section search-section"> 
-          <h4>Search & Edit Employee</h4> 
-          <div className="search-container">
-            <div className="search-input-group">
-              <input 
-                value={searchValue} 
-                onChange={(e) => setSearchValue(e.target.value)} 
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Search by Employee Code and Name" 
-                className="search-input"
-                disabled={loading}
-              />
-              <button className="search-btn" onClick={handleSearch} disabled={loading || searchLoading}>
-                {searchLoading ? "Searching..." : "🔍 Search"}
-              </button>
-              <button className="clear-search-btn" onClick={() => {
-                setSearchValue("");
-                setSearchResults([]);
-                setSelectedEmployee(null);
-                setShowSearchResults(false);
-              }} disabled={loading}>
-                Clear
-              </button>
+
+  // Manager search
+  const handleManagerSearch = async () => {
+    if (!managerSearchValue.trim()) return;
+    try {
+      setManagerSearchLoading(true);
+      const res = await axios.get(`http://localhost:8080/dept/hr/emp/search?value=${managerSearchValue}`, { withCredentials: true });
+      const results = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
+      setManagerSearchResults(results);
+      setShowManagerSearch(true);
+    } catch (err) {
+      setMessage("❌ Failed to search manager");
+    } finally {
+      setManagerSearchLoading(false);
+    }
+  };
+
+  const selectManager = (employeeData) => {
+    const managerId = employeeData.ftechUserId?.userid;
+    if (managerId) {
+      setSelectedManager(employeeData);
+      setForm(prev => ({ ...prev, empMgrDto: { mgrId: managerId.toString() } }));
+      setMessage(`✅ Manager selected`);
+      setShowManagerSearch(false);
+    }
+  };
+
+  // Render step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>🔍 Search Employee</h3>
+              <p>Search for an existing employee to edit, or skip to create a new one</p>
             </div>
-            
-            {showSearchResults && searchResults.length > 0 && (
-              <>
-                <div className="search-results">
-                  <div className="search-results-header">
-                    <h5>Search Results ({searchResults.length})</h5>
-                    <button className="close-results" onClick={() => setShowSearchResults(false)}>×</button>
+
+            <div className="search-container">
+              <div className="search-input-wrapper">
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder="Search by Employee Code, Name, Email, or Phone"
+                  className="modern-input"
+                />
+                <button onClick={handleSearch} className="search-btn" disabled={searchLoading}>
+                  {searchLoading ? "Searching..." : "Search"}
+                </button>
+              </div>
+
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="search-results-card">
+                  <div className="results-header">
+                    <h4>Found {searchResults.length} employee(s)</h4>
+                    <button onClick={() => setShowSearchResults(false)}>×</button>
                   </div>
                   <div className="results-list">
-                    {searchResults.map((employee, index) => (
-                      <div 
-                        key={index} 
-                        className={`result-item ${selectedEmployee === employee ? 'selected' : ''}`}
-                        onClick={() => selectEmployeeForEdit(employee)}
+                    {searchResults.map((emp, idx) => (
+                      <div
+                        key={idx}
+                        className={`result-item ${selectedEmployee === emp ? 'selected' : ''}`}
+                        onClick={() => setSelectedEmployee(emp)}
                       >
                         <div className="result-info">
-                          <strong>{employee.personalDetailsDTO?.firstName} {employee.personalDetailsDTO?.lastName}</strong>
-                          <div className="result-details">
-                            <span>ID: {employee.ftechUserId?.userid || 'N/A'}</span>
-                            <span>Email: {employee.personalDetailsDTO?.emailId}</span>
-                            <span>Phone: {employee.personalDetailsDTO?.phoneNumber}</span>
-                            <span>Dept: {departments.find(d => d.id === employee.jobDetailsDTO?.departmentId)?.departmentName || 'N/A'}</span>
-                          </div>
+                          <h5>{emp.personalDetailsDTO?.firstName} {emp.personalDetailsDTO?.lastName}</h5>
+                          <p>ID: {emp.ftechUserId?.userid} | {emp.personalDetailsDTO?.emailId}</p>
                         </div>
-                        <div className="selection-indicator">
-                          {selectedEmployee === employee ? '✓ Selected' : 'Click to select'}
-                        </div>
+                        {selectedEmployee === emp && <span className="check-mark">✓</span>}
                       </div>
                     ))}
                   </div>
+                  {selectedEmployee && (
+                    <button onClick={loadSelectedEmployee} className="load-btn">
+                      Load for Editing
+                    </button>
+                  )}
                 </div>
-                
-                {/* EDIT OPTIONS BELOW SEARCH RESULTS */}
-                {selectedEmployee && (
-                  <div className="edit-options-panel">
-                    <div className="selected-employee-info">
-                      <h5>Selected Employee</h5>
-                      <div className="selected-details">
-                        <span><strong>Name:</strong> {selectedEmployee.personalDetailsDTO?.firstName} {selectedEmployee.personalDetailsDTO?.lastName}</span>
-                        <span><strong>ID:</strong> {selectedEmployee.ftechUserId?.userid || 'N/A'}</span>
-                        <span><strong>Department:</strong> {departments.find(d => d.id === selectedEmployee.jobDetailsDTO?.departmentId)?.departmentName || 'N/A'}</span>
-                        <span><strong>Designation:</strong> {designations.find(d => d.id === selectedEmployee.jobDetailsDTO?.designationId)?.designationName || 'N/A'}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="edit-action-buttons">
-                      <button 
-                        className="load-edit-btn"
-                        onClick={loadSelectedEmployee}
-                        disabled={loading}
-                      >
-                        📝 Load for Editing
-                      </button>
-                      <button 
-                        className="cancel-edit-btn"
-                        onClick={() => setSelectedEmployee(null)}
-                        disabled={loading}
-                      >
-                        Cancel
-                      </button>
-                      <div className="edit-note">
-                        <small>Click "Load for Editing" to load this employee's details into the form below</small>
-                      </div>
-                    </div>
+              )}
+
+              <div className="or-divider">
+                <span>OR</span>
+              </div>
+
+              <button onClick={() => setCurrentStep(2)} className="create-new-btn">
+                Create New Employee
+              </button>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>👤 Personal Details</h3>
+              <p>Enter basic personal information</p>
+            </div>
+            <div className="form-grid-2">
+              <div className="input-group">
+                <label>First Name <span className="required">*</span></label>
+                <input
+                  value={form.personalDetailsDTO.firstName}
+                  onChange={(e) => handleChange("personalDetailsDTO", "firstName", e.target.value)}
+                  placeholder="Enter first name"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Middle Name</label>
+                <input
+                  value={form.personalDetailsDTO.middleName}
+                  onChange={(e) => handleChange("personalDetailsDTO", "middleName", e.target.value)}
+                  placeholder="Enter middle name"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Last Name <span className="required">*</span></label>
+                <input
+                  value={form.personalDetailsDTO.lastName}
+                  onChange={(e) => handleChange("personalDetailsDTO", "lastName", e.target.value)}
+                  placeholder="Enter last name"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Gender <span className="required">*</span></label>
+                <select
+                  value={form.personalDetailsDTO.gender}
+                  onChange={(e) => handleChange("personalDetailsDTO", "gender", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Date of Birth <span className="required">*</span></label>
+                <input
+                  type="date"
+                  value={form.personalDetailsDTO.dob}
+                  onChange={(e) => handleChange("personalDetailsDTO", "dob", e.target.value)}
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Nationality</label>
+                <select
+                  value={form.personalDetailsDTO.nationality}
+                  onChange={(e) => handleChange("personalDetailsDTO", "nationality", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Nationality</option>
+                  <option value="Indian">Indian</option>
+                  <option value="American">American</option>
+                  <option value="British">British</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Marital Status</label>
+                <select
+                  value={form.personalDetailsDTO.maritalStatus}
+                  onChange={(e) => handleChange("personalDetailsDTO", "maritalStatus", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Blood Group</label>
+                <select
+                  value={form.personalDetailsDTO.bloodGroup}
+                  onChange={(e) => handleChange("personalDetailsDTO", "bloodGroup", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Aadhaar Number</label>
+                <input
+                  value={form.personalDetailsDTO.aadhaarNumber}
+                  onChange={(e) => handleChange("personalDetailsDTO", "aadhaarNumber", e.target.value)}
+                  placeholder="12-digit Aadhaar"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>PAN Number</label>
+                <input
+                  value={form.personalDetailsDTO.panNumber}
+                  onChange={(e) => handleChange("personalDetailsDTO", "panNumber", e.target.value.toUpperCase())}
+                  placeholder="ABCDE1234F"
+                  className="modern-input"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>📞 Contact Information</h3>
+              <p>Phone, email, and address details</p>
+            </div>
+            <div className="form-grid-2">
+              <div className="input-group">
+                <label>Phone Number <span className="required">*</span></label>
+                <input
+                  value={form.personalDetailsDTO.phoneNumber}
+                  onChange={(e) => handleChange("personalDetailsDTO", "phoneNumber", e.target.value)}
+                  placeholder="10-digit phone"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Email <span className="required">*</span></label>
+                <input
+                  type="email"
+                  value={form.personalDetailsDTO.emailId}
+                  onChange={(e) => handleChange("personalDetailsDTO", "emailId", e.target.value)}
+                  placeholder="example@domain.com"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group full-width">
+                <label>Current Address <span className="required">*</span></label>
+                <textarea
+                  value={form.personalDetailsDTO.address1}
+                  onChange={(e) => handleChange("personalDetailsDTO", "address1", e.target.value)}
+                  rows="3"
+                  placeholder="Enter current address"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group full-width">
+                <label>Permanent Address</label>
+                <textarea
+                  value={form.personalDetailsDTO.address2}
+                  onChange={(e) => handleChange("personalDetailsDTO", "address2", e.target.value)}
+                  rows="3"
+                  placeholder="Enter permanent address"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Emergency Contact Name</label>
+                <input
+                  value={form.personalDetailsDTO.emergencyContactName}
+                  onChange={(e) => handleChange("personalDetailsDTO", "emergencyContactName", e.target.value)}
+                  placeholder="Contact name"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Emergency Contact Relation</label>
+                <select
+                  value={form.personalDetailsDTO.emergencyContactRelation}
+                  onChange={(e) => handleChange("personalDetailsDTO", "emergencyContactRelation", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Relation</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Spouse">Spouse</option>
+                  <option value="Sibling">Sibling</option>
+                  <option value="Friend">Friend</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Emergency Phone Number</label>
+                <input
+                  value={form.personalDetailsDTO.emergencyPhoneNumber}
+                  onChange={(e) => handleChange("personalDetailsDTO", "emergencyPhoneNumber", e.target.value)}
+                  placeholder="Emergency contact"
+                  className="modern-input"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>💼 Job Details</h3>
+              <p>Department, designation, and work information</p>
+            </div>
+            <div className="form-grid-2">
+              <div className="input-group">
+                <label>Department <span className="required">*</span></label>
+                <select
+                  value={form.jobDetailsDTO.departmentId}
+                  onChange={(e) => handleChange("jobDetailsDTO", "departmentId", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>{dept.departmentName}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Designation <span className="required">*</span></label>
+                <select
+                  value={form.jobDetailsDTO.designationId}
+                  onChange={(e) => handleChange("jobDetailsDTO", "designationId", e.target.value)}
+                  className="modern-input"
+                >
+                  <option value="">Select Designation</option>
+                  {designations.map((des) => (
+                    <option key={des.id} value={des.id}>{des.designationName}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Date of Joining <span className="required">*</span></label>
+                <input
+                  type="date"
+                  value={form.jobDetailsDTO.dateOfJoining}
+                  onChange={(e) => handleChange("jobDetailsDTO", "dateOfJoining", e.target.value)}
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Work Location</label>
+                <input
+                  value={form.jobDetailsDTO.workLocation}
+                  onChange={(e) => handleChange("jobDetailsDTO", "workLocation", e.target.value)}
+                  placeholder="Enter work location"
+                  className="modern-input"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>👔 Manager Assignment</h3>
+              <p>Search and assign a reporting manager</p>
+            </div>
+            <div className="manager-assignment">
+              {selectedManager ? (
+                <div className="selected-manager-card">
+                  <div className="manager-info">
+                    <h4>{selectedManager.personalDetailsDTO?.firstName} {selectedManager.personalDetailsDTO?.lastName}</h4>
+                    <p>ID: {selectedManager.ftechUserId?.userid}</p>
+                    <p>{selectedManager.personalDetailsDTO?.emailId}</p>
                   </div>
-                )}
-              </>
-            )}
+                  <button onClick={() => { setSelectedManager(null); setForm(prev => ({ ...prev, empMgrDto: { mgrId: "" } })); }} className="remove-btn">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="manager-search">
+                  <div className="search-input-wrapper">
+                    <input
+                      value={managerSearchValue}
+                      onChange={(e) => setManagerSearchValue(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleManagerSearch()}
+                      placeholder="Search manager by name or email"
+                      className="modern-input"
+                    />
+                    <button onClick={handleManagerSearch} className="search-btn" disabled={managerSearchLoading}>
+                      {managerSearchLoading ? "Searching..." : "Search"}
+                    </button>
+                  </div>
+                  {showManagerSearch && managerSearchResults.length > 0 && (
+                    <div className="manager-results">
+                      {managerSearchResults.map((emp, idx) => (
+                        <div key={idx} className="manager-result-item" onClick={() => selectManager(emp)}>
+                          <h5>{emp.personalDetailsDTO?.firstName} {emp.personalDetailsDTO?.lastName}</h5>
+                          <p>ID: {emp.ftechUserId?.userid} | {emp.personalDetailsDTO?.emailId}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <p className="skip-note">This step is optional. You can skip if no manager is assigned.</p>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>🏦 Bank Details</h3>
+              <p>Enter bank account information for salary processing</p>
+            </div>
+            <div className="form-grid-2">
+              <div className="input-group">
+                <label>Bank Name <span className="required">*</span></label>
+                <input
+                  value={form.bankDetailsDTO.bankName}
+                  onChange={(e) => handleChange("bankDetailsDTO", "bankName", e.target.value)}
+                  placeholder="e.g., State Bank of India"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Account Number <span className="required">*</span></label>
+                <input
+                  value={form.bankDetailsDTO.accountNumber}
+                  onChange={(e) => handleChange("bankDetailsDTO", "accountNumber", e.target.value)}
+                  placeholder="Bank account number"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>IFSC Code <span className="required">*</span></label>
+                <input
+                  value={form.bankDetailsDTO.ifsc}
+                  onChange={(e) => handleChange("bankDetailsDTO", "ifsc", e.target.value.toUpperCase())}
+                  placeholder="SBIN0001234"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Branch Name</label>
+                <input
+                  value={form.bankDetailsDTO.branchName}
+                  onChange={(e) => handleChange("bankDetailsDTO", "branchName", e.target.value)}
+                  placeholder="Branch location"
+                  className="modern-input"
+                />
+              </div>
+              <div className="input-group full-width">
+                <label>Beneficiary Name</label>
+                <input
+                  value={form.bankDetailsDTO.beneficiaryName}
+                  onChange={(e) => handleChange("bankDetailsDTO", "beneficiaryName", e.target.value)}
+                  placeholder="Account holder name"
+                  className="modern-input"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 7:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>💰 Salary & Statutory Details</h3>
+              <p>CTC and statutory information</p>
+            </div>
             
-            {showSearchResults && searchResults.length === 0 && !searchLoading && (
-              <div className="no-results">
-                <p>No employees found. Would you like to create a new one?</p>
-                <button className="create-new-btn" onClick={startNewEmployee} disabled={loading}>
-                  Create New Employee
-                </button>
+            <div className="salary-calculation-info">
+              <h4>Salary Breakdown</h4>
+              <p>Basic: {percentages?.basic}% | HRA: {percentages?.hra}% | PF: {percentages?.pf}%</p>
+            </div>
+
+            <div className="form-grid-2">
+              <div className="input-group full-width">
+                <label>CTC (Annual) <span className="required">*</span></label>
+                <input
+                  type="number"
+                  value={form.salaryDetailsDTO.ctc}
+                  onChange={(e) => handleChange("salaryDetailsDTO", "ctc", e.target.value)}
+                  placeholder="Enter annual CTC"
+                  className="modern-input"
+                />
+                <small className="helper-text">Salary components will auto-calculate</small>
+              </div>
+              <div className="input-group">
+                <label>Basic Salary</label>
+                <input
+                  type="number"
+                  value={form.salaryDetailsDTO.basic}
+                  readOnly
+                  className="modern-input readonly"
+                />
+              </div>
+              <div className="input-group">
+                <label>HRA</label>
+                <input
+                  type="number"
+                  value={form.salaryDetailsDTO.hra}
+                  readOnly
+                  className="modern-input readonly"
+                />
+              </div>
+              <div className="input-group">
+                <label>PF</label>
+                <input
+                  type="number"
+                  value={form.salaryDetailsDTO.pf}
+                  readOnly
+                  className="modern-input readonly"
+                />
+              </div>
+              <div className="input-group">
+                <label>Conveyance Allowance</label>
+                <input
+                  type="number"
+                  value={form.salaryDetailsDTO.conveyanceAllowance}
+                  readOnly
+                  className="modern-input readonly"
+                />
+              </div>
+              <div className="input-group net-salary-display">
+                <label>Net Salary (Annual)</label>
+                <input
+                  type="number"
+                  value={netSalary}
+                  readOnly
+                  className="modern-input readonly highlight"
+                />
+              </div>
+            </div>
+
+            <div className="statutory-section">
+              <h4>Statutory Details</h4>
+              <div className="form-grid-2">
+                <div className="input-group">
+                  <label>PF UAN</label>
+                  <input
+                    value={form.employeeStatutoryDetailsDTO.pfUan}
+                    onChange={(e) => handleChange("employeeStatutoryDetailsDTO", "pfUan", e.target.value)}
+                    placeholder="12-digit UAN"
+                    className="modern-input"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>ESI Number</label>
+                  <input
+                    value={form.employeeStatutoryDetailsDTO.esi}
+                    onChange={(e) => handleChange("employeeStatutoryDetailsDTO", "esi", e.target.value)}
+                    placeholder="ESI number"
+                    className="modern-input"
+                  />
+                </div>
+                <div className="input-group full-width">
+                  <label>Medical Insurance Number</label>
+                  <input
+                    value={form.employeeStatutoryDetailsDTO.min}
+                    onChange={(e) => handleChange("employeeStatutoryDetailsDTO", "min", e.target.value)}
+                    placeholder="Medical insurance number"
+                    className="modern-input"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className="step-content">
+            <div className="step-header">
+              <h3>📄 Document Uploads</h3>
+              <p>Upload required documents</p>
+            </div>
+
+            {mode === "edit" && existingDocuments.length > 0 && (
+              <div className="existing-docs">
+                <h4>Existing Documents</h4>
+                {existingDocuments.map((doc) => (
+                  <div key={doc.docId} className="doc-item">
+                    <span>{doc.documentName}</span>
+                    <span className="doc-file">{getFileNameFromPath(doc.docPath)}</span>
+                  </div>
+                ))}
               </div>
             )}
+
+            <div className="document-upload-grid">
+              {documents.map((doc) => {
+                const isUploading = uploadingDocuments[doc.key];
+                const existing = existingDocuments.find((d) => d.documentName === doc.documentName);
+                
+                return (
+                  <div key={doc.id} className="doc-upload-card">
+                    <div className="doc-header">
+                      <h5>{doc.displayName}</h5>
+                      {doc.mandatory && <span className="badge-required">Required</span>}
+                      {!doc.mandatory && <span className="badge-optional">Optional</span>}
+                    </div>
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(doc.key, e.target.files[0])}
+                      disabled={loading || isUploading}
+                      accept={doc.fileType === "PDF" ? ".pdf" : ".jpg,.jpeg,.png"}
+                      className="file-input"
+                    />
+                    {isUploading && <p className="uploading">Uploading...</p>}
+                    {existing && <p className="uploaded">✓ {getFileNameFromPath(existing.docPath)}</p>}
+                    {uploadedFiles[doc.key] && <p className="selected">Selected: {uploadedFiles[doc.key].name}</p>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="modular-container">
+      <div className="modular-card">
+        {/* Header */}
+        {/* <div className="modular-header">
+          <h2>{mode === "create" ? "Create Employee" : "Edit Employee"}</h2>
+          <button onClick={resetForm} className="reset-btn">Reset</button>
+        </div> */}
+
+        {/* Progress Bar */}
+        <div className="progress-bar-container">
+          <div className="progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
+          <div className="step-indicators">
+            {steps.map((step) => (
+              <div
+                key={step.number}
+                className={`step-indicator ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}
+                onClick={() => goToStep(step.number)}
+              >
+                <div className="step-number">
+                  {currentStep > step.number ? '✓' : step.icon}
+                </div>
+                <span className="step-title">{step.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="step-container">
+          {renderStepContent()}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="navigation-buttons">
+          {currentStep > 1 && (
+            <button onClick={prevStep} className="nav-btn prev-btn">
+              ← Previous
+            </button>
+          )}
           
-          <div className="search-hint">
-            <small>Tip: Search for an employee, select from results, then click "Load for Editing"</small>
-          </div>
-        </section> 
-        
-        {/* EMPLOYEE MODE INDICATOR */}
-        {mode && (
-          <div className={`mode-indicator ${mode}`}>
-            {mode === 'create' ? 'Creating New Employee' : `Editing Employee - User ID: ${userId || 'Not loaded'}`}
+          {currentStep < totalSteps && (
+            <button onClick={nextStep} className="nav-btn next-btn">
+              Next →
+            </button>
+          )}
+
+          {currentStep === totalSteps && (
+            <button onClick={submitEmployee} className="submit-btn" disabled={loading}>
+              {loading ? "Processing..." : mode === "create" ? "Create Employee" : "Update Employee"}
+            </button>
+          )}
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`message-toast ${message.includes('✅') ? 'success' : message.includes('❌') ? 'error' : 'info'}`}>
+            {message}
           </div>
         )}
-        
-        {/* PERSONAL DETAILS */} 
-        <section className="form-section"> 
-          <h4>Personal Details</h4> 
-          <div className="form-grid"> 
-            <div className="input-group">
-  <label>
-    First Name <span className="required-star"></span>
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.firstName}
-    onChange={(e) => handleFirstNameChange(e.target.value)}
-    maxLength={50}
-    required
-    disabled={loading}
-  />
-
-  {firstNameError && (
-    <small className="error-text">{firstNameError}</small>
-  )}
-</div>
-
-            <div className="input-group"> 
-              <label>Middle Name</label> 
-              <input 
-                value={form.personalDetailsDTO.middleName} 
-                onChange={(e)=>handleChange("personalDetailsDTO","middleName",e.target.value)} 
-                disabled={loading}
-              /> 
-            </div> 
-<div className="input-group">
-  <label>
-    Last Name <span className="required-star"></span>
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.lastName}
-    onChange={(e) => handleLastNameChange(e.target.value)}
-    maxLength={50}
-    required
-    disabled={loading}
-  />
-
-  {lastNameError && (
-    <small className="error-text">{lastNameError}</small>
-  )}
-</div>
-
-            <div className="input-group"> 
-              <label>Gender </label> 
-              <select 
-                value={form.personalDetailsDTO.gender} 
-                onChange={(e)=>handleChange("personalDetailsDTO","gender",e.target.value)} 
-                required 
-                disabled={loading}
-              > 
-                <option value="">Select Gender</option> 
-                <option value="Male">Male</option> 
-                <option value="Female">Female</option> 
-                <option value="Other">Other</option> 
-              </select> 
-            </div> 
-<div className="input-group">
-  <label>
-    Date of Birth <span className="required-star"></span>
-  </label>
-
-  <input
-    type="date"
-    value={form.personalDetailsDTO.dob}
-    onChange={(e) => handleDobChange(e.target.value)}
-    max={new Date().toISOString().split("T")[0]}
-    required
-    disabled={loading}
-  />
-  
-
-  {dobError && (
-    <small className="error-text">{dobError}</small>
-  )}
-</div>
-
-            <div className="input-group">
-              <label>
-                Nationality <span className="required-star"></span>
-              </label>
-              <select
-                value={form.personalDetailsDTO.nationality}
-                onChange={(e) =>
-                  handleChange("personalDetailsDTO", "nationality", e.target.value)
-                }
-                required
-                disabled={loading}
-              >
-                <option value="">Select Nationality</option>
-                <option value="Indian">Indian</option>
-                <option value="American">American</option>
-                <option value="British">British</option>
-                <option value="Canadian">Canadian</option>
-                <option value="Australian">Australian</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div className="input-group"> 
-              <label>Marital Status </label> 
-              <select 
-                value={form.personalDetailsDTO.maritalStatus} 
-                onChange={(e)=>handleChange("personalDetailsDTO","maritalStatus",e.target.value)} 
-                required 
-                disabled={loading}
-              > 
-                <option value="">Select Status</option> 
-                <option value="Single">Single</option> 
-                <option value="Married">Married</option> 
-                <option value="Divorced">Divorced</option> 
-                <option value="Widowed">Widowed</option> 
-              </select> 
-            </div> 
-            <div className="input-group"> 
-              <label>Blood Group</label> 
-              <select 
-                value={form.personalDetailsDTO.bloodGroup} 
-                onChange={(e)=>handleChange("personalDetailsDTO","bloodGroup",e.target.value)} 
-                disabled={loading}
-              > 
-                <option value="">Select Blood Group</option> 
-                <option value="A+">A+</option> 
-                <option value="A-">A-</option> 
-                <option value="B+">B+</option> 
-                <option value="B-">B-</option> 
-                <option value="AB+">AB+</option> 
-                <option value="AB-">AB-</option> 
-                <option value="O+">O+</option> 
-                <option value="O-">O-</option> 
-              </select> 
-            </div> 
-            
-<div className="input-group">
-  <label>
-    Aadhaar Number 
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.aadhaarNumber}
-    onChange={(e) => handleAadhaarChange(e.target.value)}
-    maxLength={12}
-    placeholder="12-digit Aadhaar"
-    inputMode="numeric"
-    required
-    disabled={loading}
-  />
-
-  {aadhaarError && (
-    <small className="error-text">{aadhaarError}</small>
-  )}
-</div>
-
-            
-            <div className="input-group"> 
-              <label>PAN Number </label> 
-              <input
-                value={form.personalDetailsDTO.panNumber}
-                onChange={(e) => {
-                  let value = e.target.value.toUpperCase();
-                  value = value.replace(/[^A-Z0-9]/g, "");
-
-                  if (value.length <= 5) {
-                    value = value.replace(/[^A-Z]/g, "");
-                  } else if (value.length <= 9) {
-                    value =
-                      value.slice(0, 5).replace(/[^A-Z]/g, "") +
-                      value.slice(5).replace(/[^0-9]/g, "");
-                  } else {
-                    value =
-                      value.slice(0, 5).replace(/[^A-Z]/g, "") +
-                      value.slice(5, 9).replace(/[^0-9]/g, "") +
-                      value.slice(9, 10).replace(/[^A-Z]/g, "");
-                  }
-
-                  handleChange("personalDetailsDTO", "panNumber", value);
-                }}
-                maxLength={10}
-                placeholder="ABCDE1234F"
-                required
-                disabled={loading}
-              />
-            </div> 
-         <div className="input-group">
-  <label>
-    Phone Number 
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.phoneNumber}
-    onChange={(e) => handlePhoneNumberChange(e.target.value)}
-    maxLength={10}
-    placeholder="10-digit number starting with 6-9"
-    inputMode="numeric"
-    required
-    disabled={loading}
-  />
-
-  {phoneError && (
-    <small className="error-text">{phoneError}</small>
-  )}
-</div>
- 
-            <div className="input-group">
-
-  <label>
-    Email <span className="required-star"></span>
-  </label>
-
-  <input
-    type="email"
-    value={form.personalDetailsDTO.emailId}
-    onChange={(e) => handleEmailChange(e.target.value)}
-    onBlur={(e) => validateEmail(e.target.value)}   // ✅ validate here
-    maxLength={50}
-    placeholder="example@domain.com"
-    required
-    disabled={loading}
-  />
-
-  {emailError && (
-    <small className="error-text">{emailError}</small>
-  )}
-</div>
-
-
-<div className="input-group full-width">
-  <label>
-    Current Address (Address1) <span className="required-star"></span>
-  </label>
-
-  <textarea
-    value={form.personalDetailsDTO.address1}
-    onChange={(e) => handleAddress1Change(e.target.value)}
-    rows="3"
-    maxLength={200}   // 🔒 HARD LIMIT
-    placeholder="Enter current address (10–200 characters)"
-    required
-    disabled={loading}
-  />
-
-  {address1Error && (
-    <small className="error-text">{address1Error}</small>
-  )}
-</div>
-
-            <div className="input-group full-width"> 
-              <label>Permanent Address (Address2)</label> 
-              <textarea 
-                value={form.personalDetailsDTO.address2} 
-                onChange={(e)=>handleChange("personalDetailsDTO","address2",e.target.value)} 
-                rows="3" 
-                placeholder="Permanent address" 
-                disabled={loading}
-              /> 
-            </div> 
-           <div className="input-group">
-  <label>
-    Emergency Contact Name <span className="required-star"></span>
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.emergencyContactName}
-    onChange={(e) => handleEmergencyNameChange(e.target.value)}
-    placeholder="Enter emergency contact name"
-    maxLength={50}
-    required
-    disabled={loading}
-  />
-
-  {emergencyNameError && (
-    <small className="error-text">{emergencyNameError}</small>
-  )}
-</div>
-
-
-            <div className="input-group"> 
-              <label>Emergency Contact Relation </label> 
-              <select 
-                value={form.personalDetailsDTO.emergencyContactRelation} 
-                onChange={(e)=>handleChange("personalDetailsDTO","emergencyContactRelation",e.target.value)} 
-                required 
-                disabled={loading}
-              > 
-                <option value="">Select Relation</option> 
-                <option value="Father">Father</option> 
-                <option value="Mother">Mother</option> 
-                <option value="Spouse">Spouse</option> 
-                <option value="Son">Son</option> 
-                <option value="Daughter">Daughter</option> 
-                <option value="Brother">Brother</option> 
-                <option value="Sister">Sister</option> 
-                <option value="Friend">Friend</option> 
-                <option value="Other">Other</option> 
-              </select> 
-            </div> 
-           <div className="input-group">
-  <label>
-    Emergency Contact Number <span className="required-star"> </span>
-  </label>
-
-  <input
-    value={form.personalDetailsDTO.emergencyPhoneNumber}
-    onChange={(e) => handleEmergencyPhoneChange(e.target.value)}
-    maxLength="10"
-    placeholder="10-digit number starting with 6-9"
-    inputMode="numeric"
-    required
-    disabled={loading}
-  />
-
-  {emergencyPhoneError && (
-    <small className="error-text">{emergencyPhoneError}</small>
-  )}
-</div>
-
-          </div> 
-        </section> 
-        
-        {/* JOB DETAILS */} 
-        <section className="form-section"> 
-          <h4>Job Details</h4> 
-          <div className="form-grid"> 
-            <div className="input-group"> 
-              <label>Department </label> 
-              <select 
-                value={form.jobDetailsDTO.departmentId} 
-                onChange={(e) => handleChange("jobDetailsDTO", "departmentId", e.target.value)} 
-                required 
-                disabled={loading}
-              > 
-                <option value="">Select Department</option> 
-                {departments.map((dept) => ( 
-                  <option key={dept.id} value={dept.id}> 
-                    {dept.departmentName} 
-                  </option> 
-                ))} 
-              </select> 
-            </div> 
-            <div className="input-group"> 
-              <label>Designation </label> 
-              <select 
-                value={form.jobDetailsDTO.designationId} 
-                onChange={(e) => handleChange("jobDetailsDTO", "designationId", e.target.value)} 
-                required 
-                disabled={loading}
-              > 
-                <option value="">Select Designation</option> 
-                {designations.map((des) => ( 
-                  <option key={des.id} value={des.id}> 
-                    {des.designationName} 
-                  </option> 
-                ))} 
-              </select> 
-            </div> 
-            <div className="input-group">
-  <label>
-    Date of Joining <span className="required-star">*</span>
-  </label>
-
-  <input
-    type="date"
-    value={form.jobDetailsDTO.dateOfJoining}
-    onChange={(e) => handleDateOfJoiningChange(e.target.value)}
-    max={new Date().toISOString().split("T")[0]}  // ❌ future blocked
-    required
-    disabled={loading}
-  />
-
-  {dateOfJoiningError && (
-    <small className="error-text">{dateOfJoiningError}</small>
-  )}
-</div>
-
-            <div className="input-group"> 
-              <label>Work Location </label> 
-              <input 
-                value={form.jobDetailsDTO.workLocation} 
-                onChange={(e) => handleChange("jobDetailsDTO", "workLocation", e.target.value)} 
-                required 
-                disabled={loading}
-              /> 
-            </div> 
-          </div> 
-        </section> 
-        
-        {/* BANK DETAILS */} 
-        <section className="form-section"> 
-          <h4>Bank Details</h4> 
-          <div className="form-grid"> 
-            <div className="input-group"> 
-              <label>Bank Name </label> 
-              <input 
-                value={form.bankDetailsDTO.bankName} 
-                onChange={(e)=>handleChange("bankDetailsDTO","bankName",e.target.value)} 
-                required 
-                placeholder="e.g., State Bank of India" 
-                disabled={loading}
-              /> 
-            </div> 
-            <div className="input-group"> 
-              <label>Account Number </label> 
-              <input
-                value={form.bankDetailsDTO.accountNumber}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "");
-                  if (value.length <= 18) {
-                    handleChange("bankDetailsDTO", "accountNumber", value);
-                  }
-                }}
-                maxLength={18}
-                placeholder="Bank Account Number"
-                inputMode="numeric"
-                required
-                disabled={loading}
-              />
-            </div> 
-            <div className="input-group"> 
-              <label>IFSC Code </label> 
-              <input
-                value={form.bankDetailsDTO.ifsc}
-                onChange={(e) => {
-                  const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-                  if (value.length <= 11) {
-                    handleChange("bankDetailsDTO", "ifsc", value);
-                  }
-                }}
-                maxLength={11}
-                placeholder="SBIN0001234"
-                required
-                disabled={loading}
-              />
-            </div> 
-          </div> 
-        </section> 
-        
-        {/* STATUTORY DETAILS */}
-        <section className="form-section statutory-section">
-          <h4>Statutory Details</h4>
-          <div className="statutory-grid">
-            <div className="input-group">
-              <label>
-                Provident Fund UAN <span className="required-star"></span>
-              </label>
-              <input
-                value={form.employeeStatutoryDetailsDTO.pfUan}
-                onChange={(e) =>
-                  handleChange("employeeStatutoryDetailsDTO", "pfUan", e.target.value)
-                }
-                placeholder="12-digit UAN number"
-                maxLength="12"
-                required
-                inputMode="numeric"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-group">
-              <label>
-                ESI Number <span className="required-star"></span>
-              </label>
-              <input
-                value={form.employeeStatutoryDetailsDTO.esi}
-                onChange={(e) =>
-                  handleChange("employeeStatutoryDetailsDTO", "esi", e.target.value)
-                }
-                placeholder="Employees' State Insurance number"
-                maxLength={10}
-                inputMode="numeric"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-group statutory-full">
-              <label>
-                Medical Insurance Number <span className="required-star"></span>
-              </label>
-              <input
-                value={form.employeeStatutoryDetailsDTO.min}
-                onChange={(e) =>
-                  handleChange("employeeStatutoryDetailsDTO", "min", e.target.value)
-                }
-                placeholder="Medical Insurance number"
-                maxLength={20}
-                required
-                disabled={loading}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* SALARY DETAILS - UPDATED VERSION */} 
-        <section className="form-section"> 
-          <h4>Salary Details</h4> 
-          <div className="salary-info"> 
-            <p className="percentage-info"> 
-              <strong>Dynamic Salary Percentages (from API):</strong> 
-              <br /> 
-              Basic: <span className="percentage-value">{percentages?.basic || 0}%</span> of CTC, 
-              HRA: <span className="percentage-value">{percentages?.hra || 0}%</span> of Basic, 
-              PF: <span className="percentage-value">{percentages?.pf || 0}%</span> of Basic 
-            </p> 
-            <p className="formula-info"> 
-              <strong>Formulas:</strong> 
-              Basic = CTC × {percentages?.basic || 0}% | 
-              HRA = Basic × {percentages?.hra || 0}% | 
-              PF = Basic × {percentages?.pf || 0}% | 
-              Net Salary = CTC - PF 
-            </p> 
-          </div> 
-          <div className="form-grid"> 
-            <div className="input-group full-width"> 
-              <label>
-                CTC (Cost to Company) <span className="required-star">*</span>
-              </label>
-              <div className="ctc-input-group"> 
-                <input 
-                  type="number" 
-                  value={form.salaryDetailsDTO.ctc} 
-                  onChange={(e)=>handleChange("salaryDetailsDTO","ctc",e.target.value)} 
-                  required 
-                  min="0" 
-                  step="1000" 
-                  placeholder="Enter annual CTC" 
-                  disabled={loading}
-                /> 
-                <div className="auto-calculation-note">
-                  <small>Salary auto-calculates when you enter CTC</small>
-                </div>
-              </div> 
-            </div> 
-            <div className="input-group"> 
-              <label>Basic Salary <span className="required-star">*</span></label> 
-              <input 
-                type="number" 
-                value={form.salaryDetailsDTO.basic} 
-                readOnly 
-                disabled={loading}
-                className="calculated-field"
-              /> 
-            </div> 
-            <div className="input-group"> 
-              <label>HRA <span className="required-star">*</span></label> 
-              <input 
-                type="number" 
-                value={form.salaryDetailsDTO.hra} 
-                readOnly 
-                disabled={loading}
-                className="calculated-field"
-              /> 
-            </div> 
-            <div className="input-group"> 
-              <label>PF <span className="required-star">*</span> </label> 
-              <input 
-                type="number" 
-                value={form.salaryDetailsDTO.pf} 
-                readOnly 
-                disabled={loading}
-                className="calculated-field"
-              /> 
-            </div> 
-            <div className="input-group"> 
-              <label>Conveyance Allowance <span className="required-star">*</span></label> 
-              <input 
-                type="number" 
-                value={form.salaryDetailsDTO.conveyanceAllowance} 
-                readOnly 
-                disabled={loading}
-                className="calculated-field"
-              /> 
-            </div> 
-            <div className="input-group net-salary"> 
-              <label>Net Salary (Annual)<span className="required-star">*</span> </label> 
-              <input 
-                type="number" 
-                value={netSalary} 
-                readOnly 
-                disabled={loading}
-                className="net-salary-field"
-              /> 
-              <div className="salary-note">
-                <small>Net = CTC - PF</small>
-              </div>
-            </div> 
-          </div> 
-        </section> 
-        
-        <div className="action-buttons"> 
-          <button className="submit-btn" onClick={submitEmployee} disabled={loading}> 
-            {loading ? ( 
-              <> 
-                <span className="spinner"></span> 
-                {mode === "create" ? "Creating Employee..." : "Updating Employee..."} 
-              </> 
-            ) : (mode === "create" ? "Submit" : "Update Employee")} 
-          </button> 
-        </div> 
-        
-        {message && ( 
-          <div className={`form-message ${message.includes('✅') ? 'success' : message.includes('❌') ? 'error' : 'info'}`}> 
-            {message} 
-          </div> 
-        )} 
-      </div> 
-    </div> 
-  ); 
+      </div>
+    </div>
+  );
 }
+
+export default HrEmployeeManagement;

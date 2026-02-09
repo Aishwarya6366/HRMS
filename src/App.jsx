@@ -11,7 +11,8 @@ import EmpCalendar from "./EmpCalendar";
 import EmpAnnouncement from './EmpAnnouncement';
 import HrAnnouncement from './HrAnnouncement';
 import HrEmployeeManagement from './HrEmployeeManagement';
-
+import HolidayCalendar from "./HolidayCalendar";
+import EmpMgr from "./EmpMgr";
 function App() {
   return (
     <Router>
@@ -28,6 +29,8 @@ function App() {
          <Route path="/hr-announcement" element={<HrAnnouncement />} />
 <Route path="/emp-announcement" element={<EmpAnnouncement />} />
 <Route path="/hremployee-management" element={<HrEmployeeManagement/>}/>
+<Route path="/hr-holiday-calendar" element={<HolidayCalendar />} />
+<Route path="/emp_mgr" element={<EmpMgr/>} />
 
       </Routes>
     </Router>

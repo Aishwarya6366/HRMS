@@ -1,182 +1,100 @@
-import React, { useEffect, useState } from "react";
-import "./EmpLeaveManagement.css";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const BASE = "http://localhost:8080";
+// ✅ Axios MUST be like this for Spring Session
+const api = axios.create({
+  baseURL: "http://localhost:8080",
+  withCredentials: true,
+});
 
 export default function EmpLeaveManagement() {
-  const [leaves, setLeaves] = useState([]);
+  const [leaveTypes, setLeaveTypes] = useState([]);
   const [form, setForm] = useState({
-    leaveType: "",
+    leaveId: "",
+    reason: "",
     startDate: "",
     endDate: "",
-    reason: ""
   });
 
-  /* ================= LOAD LEAVES ================= */
+  // ✅ Fetch Leave Types
   useEffect(() => {
-    loadLeaves();
+    api.get("/leave-master/all")
+      .then(res => {
+        console.log("Leave types:", res.data);
+        setLeaveTypes(res.data);
+      })
+      .catch(err => console.error("Leave type error", err));
   }, []);
 
-  const loadLeaves = async () => {
-    try {
-      const res = await fetch(`${BASE}/list`, {
-        credentials: "include"
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
-      setLeaves(Array.isArray(data) ? data : []);
-    } catch {
-      alert("Failed to load leave history");
-    }
-  };
-
-  /* ================= APPLY LEAVE ================= */
+  // ✅ Apply Leave
   const applyLeave = async () => {
-    if (!form.leaveType || !form.startDate || !form.endDate || !form.reason) {
-      alert("All fields are required");
-      return;
-    }
-
     try {
-      const res = await fetch(`${BASE}/apply`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
+      const payload = {
+        leaveId: Number(form.leaveId),
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.reason,
+      };
 
-      if (!res.ok) throw new Error();
+      console.log("Sending payload:", payload);
 
-      setForm({
-        leaveType: "",
-        startDate: "",
-        endDate: "",
-        reason: ""
-      });
+      await api.post("/leave-record/applyLeave", payload);
 
-      loadLeaves();
-    } catch {
-      alert("Failed to apply leave");
+      alert("Leave applied successfully");
+    } catch (err) {
+      console.error("Apply error:", err.response?.data);
+      alert(err.response?.data?.message);
     }
   };
 
-  /* ================= DELETE LEAVE ================= */
-  const deleteLeave = async (leaveId) => {
-    if (!leaveId) {
-      alert("Leave ID missing");
-      return;
-    }
-
-    if (!window.confirm("Delete this leave request?")) return;
-
-    try {
-      const res = await fetch(`${BASE}/leave/${leaveId}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-
-      if (!res.ok) throw new Error();
-
-      loadLeaves();
-    } catch {
-      alert("Delete failed");
-    }
-  };
-
-  /* ================= UI ================= */
   return (
-    <div className="emp-leave">
+    <div style={{ padding: "20px" }}>
       <h2>Apply Leave</h2>
 
-      <div className="form">
-        <select
-          value={form.leaveType}
-          onChange={(e) =>
-            setForm({ ...form, leaveType: e.target.value })
-          }
-        >
-          <option value="">Select Leave Type</option>
-          <option value="SICK_LEAVE">Sick Leave</option>
-          <option value="CASUAL">Casual Leave</option>
-          <option value="ANNUAL">Annual Leave</option>
-        </select>
+      <select
+        value={form.leaveId}
+        onChange={(e) =>
+          setForm({ ...form, leaveId: e.target.value })
+        }
+      >
+        <option value="">-- Select Leave Type --</option>
+        {leaveTypes.map((lt) => (
+          <option key={lt.leaveId} value={lt.leaveId}>
+            {lt.leaveName} ({lt.noOfDays} days)
+          </option>
+        ))}
+      </select>
 
-        <input
-          type="date"
-          value={form.startDate}
-          onChange={(e) =>
-            setForm({ ...form, startDate: e.target.value })
-          }
-        />
+      <br /><br />
 
-        <input
-          type="date"
-          value={form.endDate}
-          onChange={(e) =>
-            setForm({ ...form, endDate: e.target.value })
-          }
-        />
+      <input
+        type="date"
+        onChange={(e) =>
+          setForm({ ...form, startDate: e.target.value })
+        }
+      />
 
-        <textarea
-          placeholder="Reason"
-          value={form.reason}
-          onChange={(e) =>
-            setForm({ ...form, reason: e.target.value })
-          }
-        />
+      <br /><br />
 
-        <button onClick={applyLeave}>Apply Leave</button>
-      </div>
+      <input
+        type="date"
+        onChange={(e) =>
+          setForm({ ...form, endDate: e.target.value })
+        }
+      />
 
-      <h2>My Leave History</h2>
+      <br /><br />
 
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <input
+        placeholder="Reason"
+        onChange={(e) =>
+          setForm({ ...form, reason: e.target.value })
+        }
+      />
 
-        <tbody>
-          {leaves.length === 0 && (
-            <tr>
-              <td colSpan="5">No leave requests</td>
-            </tr>
-          )}
+      <br /><br />
 
-          {leaves.map((l) => (
-            <tr key={l.leaveId}>
-              <td>{l.leaveType}</td>
-              <td>{l.startDate}</td>
-              <td>{l.endDate}</td>
-              <td className={`status ${l.leaveStatus?.toLowerCase()}`}>
-                {l.leaveStatus}
-              </td>
-              <td>
-                {l.leaveStatus === "PENDING" ? (
-                  <>
-                    <button className="edit">Edit</button>
-                    <button
-                      className="danger"
-                      onClick={() => deleteLeave(l.leaveId)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                ) : (
-                  "-"
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <button onClick={applyLeave}>Apply Leave</button>
     </div>
   );
 }

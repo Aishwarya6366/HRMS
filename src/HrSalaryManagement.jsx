@@ -91,9 +91,8 @@ export default function HrSalaryManagement() {
     }
   };
   
-  /* GENERATE SALARY FOR ALL EMPLOYEES */
+  /* GENERATE SALARY FOR ALL EMPLOYEES - FIXED TO MATCH API DOC */
   const submitSalary = async () => {
-    if (!form.actualDay) return alert("Enter present days");
     if (!form.month || !form.year) return alert("Select month & year");
     setLoading(true);
     try {
@@ -101,7 +100,6 @@ export default function HrSalaryManagement() {
         "http://localhost:8080/salary/hr/month/all",
         {
           totalDay: Number(form.totalDay),
-          actualDay: Number(form.actualDay),
           month: Number(form.month),
           year: Number(form.year),
         },
@@ -342,6 +340,46 @@ export default function HrSalaryManagement() {
                 <div className="select-icon">▼</div>
               </div>
             </div>
+            <div className="form-group">
+              <label className="form-label">
+                Total Working Days
+              </label>
+              <div className="input-wrapper">
+                <input
+                  className="form-input"
+                  type="number"
+                  name="totalDay"
+                  value={form.totalDay}
+                  onChange={handleChange}
+                  placeholder="Auto-calculated"
+                  readOnly
+                />
+                <div className="input-suffix">days</div>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">
+                Default Present Days
+              </label>
+              <div className="input-wrapper">
+                <input
+                  className="form-input"
+                  type="number"
+                  name="actualDay"
+                  value={form.actualDay}
+                  onChange={handleChange}
+                  min="0"
+                  max={form.totalDay}
+                  placeholder="Default equals total days"
+                />
+                <div className="input-suffix">days</div>
+              </div>
+              {form.totalDay && form.actualDay && (
+                <div className="percentage-badge">
+                  {calculateAttendancePercentage(form.totalDay, form.actualDay)}% attendance
+                </div>
+              )}
+            </div>
           </div>
           <div className="card-footer">
             <button
@@ -361,6 +399,9 @@ export default function HrSalaryManagement() {
                 </>
               )}
             </button>
+            <div className="note-text">
+              Note: Present days are defaults only. Actual days per employee can be edited individually.
+            </div>
           </div>
         </div>
         {/* SEARCH SALARY CARD */}
@@ -417,7 +458,7 @@ export default function HrSalaryManagement() {
               <div className="filter-header">
                 <label className="form-label">
                   <Filter size={14} />
-                  Filter by Employee ID (Optional)
+                  Filter by Employee Name (Optional)
                 </label>
                 {searchUsername && (
                   <button
@@ -434,7 +475,7 @@ export default function HrSalaryManagement() {
                   className="form-input"
                   value={searchUsername}
                   onChange={handleSearchUsernameChange}
-                  placeholder="Enter VPPL..."
+                  placeholder="Enter employee name..."
                 />
                 {searchUsername && (
                   <div className="active-filter-badge">

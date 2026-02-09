@@ -43,19 +43,6 @@ body {
   gap: 14px;
 }
 
-/* ===== HAMBURGER ===== */
-.hamburger {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.hamburger span {
-  width: 24px;
-  height: 2px;
-  background: #fff;
-}
 
 /* ===== PROFILE + LOGOUT ===== */
 .header-profile-section {
@@ -292,4 +279,69 @@ body {
   .logout-btn {
     padding: 6px 10px;
   }
+}
+/* ===== DESKTOP SIDEBAR FIX ===== */
+@media (min-width: 769px) {
+  .emp-sidebar {
+    transform: translateX(0);
+  }
+
+  .emp-content {
+    margin-left: 240px; /* same as sidebar width */
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+}
+.modal-actions button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Update button */
+.modal-actions button:first-child {
+  background: linear-gradient(135deg, #ff7a18, #ff9f45);
+  color: #fff;
+}
+
+/* Cancel button */
+.modal-actions button:last-child {
+  background: #ff7a18;   /* ORANGE */
+  color: #fff;
+}
+
+.modal-actions button:last-child:hover {
+  background: #e66a12;
+}
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding: 10px 42px 10px 10px;
+  margin-bottom: 14px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* ORANGE Cancel button */
+.modal-actions button:last-child {
+  background: #ff7a18;
+  color: white;
+}
+
+.modal-actions button:last-child:hover {
+  background: #e66a12;
 }

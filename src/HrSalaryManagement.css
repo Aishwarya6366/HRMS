@@ -192,6 +192,13 @@
   margin-top: 4px;
 }
 
+.note-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 12px;
+  font-style: italic;
+}
+
 .select-wrapper {
   position: relative;
 }

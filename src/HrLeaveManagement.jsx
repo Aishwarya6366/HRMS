@@ -1,184 +1,314 @@
-import React, { useEffect, useState } from "react";
-import "./HrLeaveManagement.css";
+// import { useEffect, useState } from "react";
+// import axios from "axios";
 
-const BASE = "http://localhost:8080";
+// // ✅ VERY IMPORTANT — send session cookie to Spring
+// const api = axios.create({
+//   baseURL: "http://localhost:8080",
+//   withCredentials: true
+// });
+
+// export default function HrLeaveManagement() {
+//   const emptyForm = {
+//     leaveName: "",
+//     noOfDays: ""
+//   };
+
+//   const [form, setForm] = useState(emptyForm);
+//   const [leaves, setLeaves] = useState([]);
+//   const [editId, setEditId] = useState(null);
+
+//   // ================= FETCH ALL LEAVES =================
+//   const fetchLeaves = async () => {
+//     try {
+//       const response = await api.get("/leave-master/all");
+//       setLeaves(response.data);
+//     } catch (error) {
+//       console.error("Error fetching leaves:", error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchLeaves();
+//   }, []);
+
+//   // ================= HANDLE INPUT =================
+//   const handleChange = (event) => {
+//     setForm({ ...form, [event.target.name]: event.target.value });
+//   };
+
+//   // ================= ADD / UPDATE =================
+//   const handleSubmit = async () => {
+//     try {
+//       if (!form.leaveName || !form.noOfDays) {
+//         alert("All fields are required");
+//         return;
+//       }
+
+//       const userId = Number(sessionStorage.getItem("userId"));
+
+//       const payload = {
+//         leaveId: editId ? editId : 0,
+//         leaveName: form.leaveName,
+//         noOfDays: Number(form.noOfDays),
+//         createdBy: { id: userId }
+//       };
+
+//       if (editId) {
+//         await api.put(
+//           `/leave-master/updateLeaveMaster/${editId}`,
+//           {
+//             ...payload,
+//             updatedBy: { id: userId }
+//           }
+//         );
+//         alert("Leave updated successfully");
+//       } else {
+//         await api.post("/leave-master/create", payload);
+//         alert("Leave created successfully");
+//       }
+
+//       setForm(emptyForm);
+//       setEditId(null);
+//       fetchLeaves();
+//     } catch (error) {
+//       console.error("Server error:", error.response?.data);
+//     }
+//   };
+
+//   // ================= EDIT =================
+//   const handleEdit = (leave) => {
+//     setForm({
+//       leaveName: leave.leaveName,
+//       noOfDays: leave.noOfDays
+//     });
+//     setEditId(leave.leaveId);
+//   };
+
+//   // ================= DELETE =================
+//   const handleDelete = async (id) => {
+//     if (!window.confirm("Are you sure you want to delete this leave?")) return;
+
+//     try {
+//       await api.delete(`/leave-master/deleteLeaveMaster/${id}`);
+//       alert("Leave deleted successfully");
+//       fetchLeaves();
+//     } catch (error) {
+//       console.error("Delete error:", error);
+//     }
+//   };
+
+//   return (
+//     <div style={{ padding: "20px" }}>
+//       <h2>HR Leave Management</h2>
+
+//       {/* ===== FORM ===== */}
+//       <div style={{ marginBottom: "20px" }}>
+//         <input
+//           type="text"
+//           name="leaveName"
+//           placeholder="Leave Name"
+//           value={form.leaveName}
+//           onChange={handleChange}
+//         />
+
+//         <input
+//           type="number"
+//           name="noOfDays"
+//           placeholder="Number of Days"
+//           value={form.noOfDays}
+//           onChange={handleChange}
+//         />
+
+//         <button onClick={handleSubmit}>
+//           {editId ? "Update Leave" : "Add Leave"}
+//         </button>
+//       </div>
+
+//       {/* ===== TABLE ===== */}
+//       <table border="1" cellPadding="10">
+//         <thead>
+//           <tr>
+//             <th>ID</th>
+//             <th>Leave Name</th>
+//             <th>Number of Days</th>
+//             <th>Actions</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {leaves.map((leave) => (
+//             <tr key={leave.leaveId}>
+//               <td>{leave.leaveId}</td>
+//               <td>{leave.leaveName}</td>
+//               <td>{leave.noOfDays}</td>
+//               <td>
+//                 <button onClick={() => handleEdit(leave)}>Edit</button>
+               
+//               </td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// }
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import "./HrLeaveManagement.css"; // ✅ add css file
+
+// ✅ VERY IMPORTANT — send session cookie to Spring
+const api = axios.create({
+  baseURL: "http://localhost:8080",
+  withCredentials: true
+});
 
 export default function HrLeaveManagement() {
+  const emptyForm = {
+    leaveName: "",
+    noOfDays: ""
+  };
+
+  const [form, setForm] = useState(emptyForm);
   const [leaves, setLeaves] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [editId, setEditId] = useState(null);
+
+  // ================= FETCH ALL LEAVES =================
+  const fetchLeaves = async () => {
+    try {
+      const response = await api.get("/leave-master/all");
+      setLeaves(response.data);
+    } catch (error) {
+      console.error("Error fetching leaves:", error);
+    }
+  };
 
   useEffect(() => {
     fetchLeaves();
   }, []);
 
-  const fetchLeaves = async () => {
-    try {
-      const res = await fetch(`${BASE}/leave/all`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setLeaves(Array.isArray(data) ? data : []);
-    } catch {
-      alert("Unable to load leave requests");
-    }
+  // ================= HANDLE INPUT =================
+  const handleChange = (event) => {
+    setForm({ ...form, [event.target.name]: event.target.value });
   };
 
-  const updateStatus = async (leaveId, status) => {
+  // ================= ADD / UPDATE =================
+  const handleSubmit = async () => {
     try {
-      const res = await fetch(
-        `${BASE}/leave/${leaveId}/status?status=${status}`,
-        {
-          method: "PUT",
-          credentials: "include",
-        }
-      );
-      if (!res.ok) throw new Error();
+      if (!form.leaveName || !form.noOfDays) {
+        alert("All fields are required");
+        return;
+      }
+
+      const userId = Number(sessionStorage.getItem("userId"));
+
+      const payload = {
+        leaveId: editId ? editId : 0,
+        leaveName: form.leaveName,
+        noOfDays: Number(form.noOfDays),
+        createdBy: { id: userId }
+      };
+
+      if (editId) {
+        await api.put(
+          `/leave-master/updateLeaveMaster/${editId}`,
+          {
+            ...payload,
+            updatedBy: { id: userId }
+          }
+        );
+        alert("Leave updated successfully");
+      } else {
+        await api.post("/leave-master/create", payload);
+        alert("Leave created successfully");
+      }
+
+      setForm(emptyForm);
+      setEditId(null);
       fetchLeaves();
-    } catch {
-      alert("Status update failed");
+    } catch (error) {
+      console.error("Server error:", error.response?.data);
     }
   };
 
-  // 🔍 FILTER LOGIC
-  const filteredLeaves = leaves.filter((l) => {
-    const search = searchTerm.toLowerCase();
+  // ================= EDIT =================
+  const handleEdit = (leave) => {
+    setForm({
+      leaveName: leave.leaveName,
+      noOfDays: leave.noOfDays
+    });
+    setEditId(leave.leaveId);
+  };
 
-    const matchesSearch =
-      (l.employeeName ?? `employee ${l.employeeId}`)
-        .toLowerCase()
-        .includes(search) ||
-      l.leaveType.toLowerCase().includes(search) ||
-      l.leaveStatus.toLowerCase().includes(search);
+  // ================= DELETE =================
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this leave?")) return;
 
-    const matchesStatus =
-      statusFilter === "ALL" || l.leaveStatus === statusFilter;
-
-    const matchesFromDate =
-      !fromDate || new Date(l.startDate) >= new Date(fromDate);
-
-    const matchesToDate =
-      !toDate || new Date(l.endDate) <= new Date(toDate);
-
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesFromDate &&
-      matchesToDate
-    );
-  });
+    try {
+      await api.delete(`/leave-master/deleteLeaveMaster/${id}`);
+      alert("Leave deleted successfully");
+      fetchLeaves();
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
+  };
 
   return (
-    <div className="hr-leave">
+    <div className="hr-leave-container">
       <h2>HR Leave Management</h2>
 
-      {/* 🔍 FILTER BAR */}
-      <div className="filter-bar">
+      {/* ===== FORM ===== */}
+      <div className="leave-form">
         <input
           type="text"
-          placeholder="Search employee / type / status"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="ALL">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
+          name="leaveName"
+          placeholder="Leave Name"
+          value={form.leaveName}
+          onChange={handleChange}
         />
 
         <input
-          type="date"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
+          type="number"
+          name="noOfDays"
+          placeholder="Number of Days"
+          value={form.noOfDays}
+          onChange={handleChange}
         />
 
-        <button
-          className="reset"
-          onClick={() => {
-            setSearchTerm("");
-            setStatusFilter("ALL");
-            setFromDate("");
-            setToDate("");
-          }}
-        >
-          Reset
+        <button className="add-leave-btn" onClick={handleSubmit}>
+          {editId ? "Update Leave" : "Add Leave"}
         </button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Type</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Days</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredLeaves.length === 0 && (
+      {/* ===== TABLE ===== */}
+      <div className="hr-leave-table-wrapper">
+        <table className="hr-leave-table">
+          <thead>
             <tr>
-              <td colSpan="7" className="empty">
-                No matching leave requests
-              </td>
+              <th>ID</th>
+              <th>Leave Name</th>
+              <th>Number of Days</th>
+              <th>Actions</th>
             </tr>
-          )}
-
-          {filteredLeaves.map((l) => (
-            <tr key={l.leaveId}>
-              <td>{l.employeeName ?? `Employee #${l.employeeId}`}</td>
-              <td>{l.leaveType}</td>
-              <td>{l.startDate}</td>
-              <td>{l.endDate}</td>
-              <td>{l.days}</td>
-              <td className={`status ${l.leaveStatus.toLowerCase()}`}>
-                {l.leaveStatus}
-              </td>
-              <td>
-                {l.leaveStatus === "PENDING" ? (
-                  <>
-                    <button
-                      className="approve"
-                      onClick={() =>
-                        updateStatus(l.leaveId, "APPROVED")
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="reject"
-                      onClick={() =>
-                        updateStatus(l.leaveId, "REJECTED")
-                      }
-                    >
-                      Reject
-                    </button>
-                  </>
-                ) : (
-                  "-"
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {leaves.map((leave) => (
+              <tr key={leave.leaveId}>
+                <td>{leave.leaveId}</td>
+                <td>{leave.leaveName}</td>
+                <td>{leave.noOfDays}</td>
+                <td>
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEdit(leave)}
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
